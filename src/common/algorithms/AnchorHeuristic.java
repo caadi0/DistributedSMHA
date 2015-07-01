@@ -15,23 +15,6 @@ import common.utility.HeuristicSolverUtility;
 import mpi.MPI;
 
 public class AnchorHeuristic {
-
-	
-	public static void main(String[] args) {
-		MPI.Init(args);
-		int me = MPI.COMM_WORLD.Rank();
-		int size = MPI.COMM_WORLD.Size();
-		System.out.println("Hi from <"+me+">");
-		if(me == 1)
-		{
-			AnchorHeuristic ah = new AnchorHeuristic();
-		}
-		else 
-		{
-			RandomHeuristic rh = new RandomHeuristic(me, 0.0, Constants.CommunicationInterval);
-		}
-		
-	}
 	
 	PriorityQueue<StateP> nodePriorityQueue = PQueue.createQueue();
 	HashMap<Integer, StateP> listOfNodesMap = new HashMap<Integer, StateP>();
@@ -63,6 +46,8 @@ public class AnchorHeuristic {
 			startChild(i, initialBound, Constants.CommunicationInterval);
 		}
 		run();
+		String message = "get started";
+//		MPI.COMM_WORLD.Isend(message,0,2000,MPI.OBJECT,3,Constants.STARTOPERATION);
 	}
 	
 	private void startChild(int queueID, Double initialBound, int communicationInterval)
@@ -107,6 +92,14 @@ public class AnchorHeuristic {
 				}
 			}
 		}
+	}
+	
+	private void hearEvent()
+	{
+//		MPI.COMM_WORLD.
+		List<StateP> listOfReceivedNodes = new ArrayList<StateP>();
+		isRunning = false;
+		merge(listOfReceivedNodes);
 	}
 	
 	private void hearMergeEvent()
