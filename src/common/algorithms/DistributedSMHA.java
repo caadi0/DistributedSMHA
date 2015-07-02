@@ -12,7 +12,7 @@ public class DistributedSMHA {
 		int size = MPI.COMM_WORLD.Size();
 		System.out.println("Total number of processes started are : "+size);
 		System.out.println("Hi from <"+me+">");
-		if(me == 1)
+		if(me == 0)
 		{
 			new AnchorHeuristic();
 		}

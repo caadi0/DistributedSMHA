@@ -40,14 +40,25 @@ public class AnchorHeuristic {
 		
 		isRunning = true;
 		
-		hearMergeEvent();
+//		hearMergeEvent();
 		for(int i = 0 ; i < Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
 		{
 			startChild(i, initialBound, Constants.CommunicationInterval);
 		}
-		run();
-		String message = "get started";
-//		MPI.COMM_WORLD.Isend(message,0,2000,MPI.OBJECT,3,Constants.STARTOPERATION);
+//		run();
+//		String message = "get started";
+		char message[] = new char[100];
+		message = "abcdefghijklmn".toCharArray();
+		try {
+			System.out.println("Length of  sent packet " + message.length);
+			Thread.sleep(1000);
+			MPI.COMM_WORLD.Isend(message , 0 , message.length , MPI.CHAR , 3 , Constants.STARTOPERATION);
+			
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	private void startChild(int queueID, Double initialBound, int communicationInterval)
@@ -57,8 +68,8 @@ public class AnchorHeuristic {
 	
 	private void run()
 	{
-		while(isRunning)
-		{
+//		while(isRunning)
+//		{
 			while (nodePriorityQueue.isEmpty() == false) 
 			{
 				StateP queueHead = nodePriorityQueue.remove();
@@ -91,7 +102,8 @@ public class AnchorHeuristic {
 					}
 				}
 			}
-		}
+			MPI.Finalize();
+//		}
 	}
 	
 	private void hearEvent()

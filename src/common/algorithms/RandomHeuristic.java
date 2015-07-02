@@ -13,15 +13,16 @@ public class RandomHeuristic {
 	
 	private Double bound;
 	private int numberOfPermutations;
-	private int queueID;
+	private int _queueID;
 	private StateP _randomState;
 	
 	public RandomHeuristic(int queueID, Double bound, int numberOfPermutations)
 	{
 		this.bound = bound;
 		this.numberOfPermutations = numberOfPermutations;
+		this._queueID = queueID;
 		System.out.println("I am Random Heuristic running on core number : "+queueID);
-//		hearEvent();
+		hearEvent();
 	}
 	
 	private void mergeStates(List<StateP> listOfStatestoMerge)
@@ -31,11 +32,14 @@ public class RandomHeuristic {
 
 	private void hearEvent()
 	{
-		if(queueID == 3) {
-			String messageToStart = "";
-			Request request = MPI.COMM_WORLD.Irecv(messageToStart, 0, 2000, MPI.OBJECT, 1, Constants.STARTOPERATION);
+		System.out.println("Hearing events for Queue ID : "+_queueID);
+		if(_queueID == 3) {
+			char[] messageToStart = new char[14];
+			System.out.println("Bwaahahahahaaaaaaaaaaaa");
+			Request request = MPI.COMM_WORLD.Irecv(messageToStart, 0, 14, MPI.CHAR, 0, Constants.STARTOPERATION);
 			Status status = request.Wait();
-			System.out.println("Queue ID : "+queueID + " "+messageToStart);
+			
+			System.out.println("Queue ID : "+_queueID + " "+messageToStart.toString());
 			System.out.println("Status " + status);
 		}
 	}
