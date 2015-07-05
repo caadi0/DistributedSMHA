@@ -1,6 +1,5 @@
 package common.algorithms;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,6 +12,7 @@ import common.queues.PQueue;
 import common.utility.HeuristicSolverUtility;
 
 import mpi.MPI;
+import mpi.Request;
 
 public class AnchorHeuristic {
 	
@@ -26,51 +26,36 @@ public class AnchorHeuristic {
 	public AnchorHeuristic()
 	{
 		StateP randomState = HeuristicSolverUtility.createRandom(Constants.DIMENSION , Constants.w1);
-		System.out.println("Random State");
-		HeuristicSolverUtility.printState(randomState);
-		Double initialBound = Constants.w1 * ManhattanDistance.calculate(randomState);
-		StateP initialNode = new StateP(randomState, Constants.w1);
 		
-		initialNode.setPathCost(0);
-		initialNode.setHeuristicCost((double) ManhattanDistance.calculate(randomState));
+		randomState.setPathCost(0);
+		randomState.setHeuristicCost((double) ManhattanDistance.calculate(randomState));
+		Double initialBound = Constants.w1 * randomState.getHeuristicCost();
 		
 		// Adding to the list
-		nodePriorityQueue.add(initialNode);
-		listOfNodesMap.put(initialNode.hashCode(), initialNode);
+		nodePriorityQueue.add(randomState);
+		listOfNodesMap.put(randomState.hashCode(), randomState);
 		
 		isRunning = true;
 		
-//		hearMergeEvent();
-		for(int i = 0 ; i < Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
+		for(int i = 1 ; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
 		{
-			startChild(i, initialBound, Constants.CommunicationInterval);
+			startChild(i, initialBound, Constants.CommunicationInterval, randomState);
 		}
-//		run();
-//		String message = "get started";
-		char message[] = new char[100];
-		message = "abcdefghijklmn".toCharArray();
-		try {
-			System.out.println("Length of  sent packet " + message.length);
-			Thread.sleep(1000);
-			MPI.COMM_WORLD.Isend(message , 0 , message.length , MPI.CHAR , 3 , Constants.STARTOPERATION);
-			
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		run();
+		hearMergeEvent();
 		
 	}
 	
-	private void startChild(int queueID, Double initialBound, int communicationInterval)
+	private void startChild(int queueID, Double initialBound, int communicationInterval, StateP randomState)
 	{
-		// Start Stuff here
+		StateP[] start = new StateP[1];
+		start[0] = randomState;
+		MPI.COMM_WORLD.Isend(start , 0 , 1 , MPI.OBJECT , queueID , Constants.STARTOPERATION);
 	}
 	
-	private void run()
+	public void run()
 	{
-//		while(isRunning)
-//		{
-			while (nodePriorityQueue.isEmpty() == false) 
+			while (nodePriorityQueue.isEmpty() == false && isRunning) 
 			{
 				StateP queueHead = nodePriorityQueue.remove();
 				listOfExpandedNodesMap.put(queueHead.hashCode(), queueHead);
@@ -91,43 +76,56 @@ public class AnchorHeuristic {
 					while (actIter.hasNext()) {
 						Action actionOnState = actIter.next();
 						StateP newState = actionOnState.applyTo(queueHeadState);
-						StateP newNode = new StateP(newState, Constants.w1);
-						if (!listOfExpandedNodesMap.containsKey(newNode.hashCode())) {
-							newNode.setHeuristicCost((double) ManhattanDistance
+						if (!listOfExpandedNodesMap.containsKey(newState.hashCode())) {
+							newState.setHeuristicCost((double) ManhattanDistance
 									.calculate(newState));
-							newNode.setParent(queueHead);
-							newNode.setAction(actionOnState);
-							nodePriorityQueue.offer(newNode);
+							newState.setParent(queueHead);
+							newState.setAction(actionOnState);
+							
+							nodePriorityQueue.offer(newState);
+							listOfNodesMap.put(newState.hashCode(), newState);
 						}
 					}
 				}
 			}
+			stopAllChildren();
 			MPI.Finalize();
-//		}
 	}
 	
-	private void hearEvent()
+	private void stopChild(int queueID)
 	{
-//		MPI.COMM_WORLD.
-		List<StateP> listOfReceivedNodes = new ArrayList<StateP>();
-		isRunning = false;
-		merge(listOfReceivedNodes);
+		Boolean[] stop = new Boolean[1];
+		MPI.COMM_WORLD.Isend(stop , 0 , 1 , MPI.OBJECT , queueID , Constants.STOP);
+	}
+	
+	private void stopAllChildren() 
+	{
+		for(int i = 1 ; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
+		{
+			stopChild(i);
+		}
 	}
 	
 	private void hearMergeEvent()
 	{
-//		MPI.COMM_WORLD.
-		List<StateP> listOfReceivedNodes = new ArrayList<StateP>();
+		int[] sizeArray = new int[1];
+		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		request2.Wait();
+		
+		int size = sizeArray[0];
+		
+		StateP[] arrayOfStates = new StateP[size];
+		Request request3 = MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);		
+		request3.Wait();
+		
 		isRunning = false;
-		merge(listOfReceivedNodes);
+		merge(arrayOfStates);
 	}
 	
-	private void merge(List<StateP> listOfReceivedNodes)
+	private void merge(StateP[] listOfReceivedNodes)
 	{
-		Iterator<StateP> nodeIter = listOfReceivedNodes.iterator();
-		while(nodeIter.hasNext())
+		for(StateP node : listOfReceivedNodes)
 		{
-			StateP node = nodeIter.next();
 			StateP existingNode = listOfNodesMap.get(node.hashCode());
 			if(existingNode != null)
 			{

@@ -62,7 +62,7 @@ public class HeuristicSolverUtility
 		StateP s = new StateP(generateGoalState(dimension , weight).getAllCells() , weight);
 		Action old = null;
 		
-		for (int i = 0; i < 50; i++) 
+		for (int i = 0; i < Constants.DegreeOfRandomness; i++) 
 		{
 			List<Action> actions = s.getPossibleActions();
 			// pick an action randomly

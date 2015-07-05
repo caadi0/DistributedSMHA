@@ -1,5 +1,6 @@
 package common.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,8 +8,10 @@ import java.util.List;
 import common.impl.Action;
 import common.impl.Move;
 
-public class StateP implements State
+public class StateP implements State , Serializable
 {
+	
+	private static final long serialVersionUID = 8149186232479825207L;
 	private StateP _parent;
 	private Integer _pathCost = Integer.MAX_VALUE; 
 	
