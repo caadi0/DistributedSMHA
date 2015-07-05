@@ -94,6 +94,7 @@ public class AnchorHeuristic {
 	
 	private void stopChild(int queueID)
 	{
+		System.out.println("Sending stop");
 		Boolean[] stop = new Boolean[1];
 		MPI.COMM_WORLD.Isend(stop , 0 , 1 , MPI.OBJECT , queueID , Constants.STOP);
 	}
@@ -109,7 +110,7 @@ public class AnchorHeuristic {
 	private void hearMergeEvent()
 	{
 		int[] sizeArray = new int[1];
-		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE, Constants.SIZE);
 		request2.Wait();
 		
 		int size = sizeArray[0];
