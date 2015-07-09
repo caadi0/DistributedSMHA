@@ -87,13 +87,13 @@ public class RandomHeuristic {
 		
 		int[] sizeArray = new int[1];
 		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
-		request2.Wait();
+//		request2.Wait();
 		
 		int size = sizeArray[0];
 		
 		StateP[] arrayOfStates = new StateP[size];
 		Request request3 = MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);		
-		request3.Wait();
+//		request3.Wait();
 		
 		isRunning = false;
 		mergeStates(arrayOfStates);
@@ -101,7 +101,7 @@ public class RandomHeuristic {
 		System.out.println("I got executed");
 		Boolean[] stop = new Boolean[1];
 		Request request4 = MPI.COMM_WORLD.Irecv(stop, 0, 1, MPI.BOOLEAN, 0, Constants.STOP);		
-		request4.Wait();
+//		request4.Wait();
 		isRunning = false;
 		System.out.println("Stopped by MASTER");
 
@@ -115,10 +115,9 @@ public class RandomHeuristic {
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
 		Request request2 = MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
-		request2.Wait();
-		
+//		request2.Wait();
 		Request request3 = MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);		
-		request3.Wait();
+
 		
 	}
 	
@@ -154,11 +153,12 @@ public class RandomHeuristic {
 						}
 					}
 				}
+//				System.out.println("I am running non stop "+_queueID);
 				if(this._numberOfPermutations-- == 0)
 				{
 					sendStatesForMerging();
 				}
-				System.out.println("Continuous Slaves");
+//				System.out.println("Continuous Slaves");
 			}
 	}
 

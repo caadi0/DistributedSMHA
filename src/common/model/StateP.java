@@ -182,9 +182,13 @@ public class StateP implements State , Serializable
 		return false;
 	}
 	
-	public static class HoleCellLocation 
+	public static class HoleCellLocation implements Serializable
 	{
 
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 7366201611005565964L;
 		private int rowIndex;
 		private int columnIndex;
 

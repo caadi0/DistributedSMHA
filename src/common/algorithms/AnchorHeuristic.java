@@ -41,8 +41,8 @@ public class AnchorHeuristic {
 		{
 			startChild(i, initialBound, Constants.CommunicationInterval, randomState);
 		}
-		run();
 		hearMergeEvent();
+		run();
 		
 	}
 	
@@ -109,16 +109,18 @@ public class AnchorHeuristic {
 	
 	private void hearMergeEvent()
 	{
+		System.out.println("ANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
 		int[] sizeArray = new int[1];
 		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE, Constants.SIZE);
-		request2.Wait();
+//		request2.Wait();
 		
 		int size = sizeArray[0];
 		
 		StateP[] arrayOfStates = new StateP[size];
-		Request request3 = MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);		
-		request3.Wait();
+		Request request3 = MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, MPI.ANY_SOURCE, Constants.MERGE);		
+//		request3.Wait();
 		
+		System.out.println("Anchor received states for merging");
 		isRunning = false;
 		merge(arrayOfStates);
 	}

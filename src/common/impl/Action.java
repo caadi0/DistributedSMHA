@@ -1,10 +1,16 @@
 package common.impl;
 
+import java.io.Serializable;
+
 import common.model.StateP;
 import common.model.StateP.HoleCellLocation;
 
-public class Action {
+public class Action implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8549077333496420988L;
 	private Move m;
 	private HoleCellLocation cell;
 
