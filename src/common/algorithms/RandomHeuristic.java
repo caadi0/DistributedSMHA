@@ -47,6 +47,10 @@ public class RandomHeuristic {
 	{
 		for(StateP node : listOfStatestoMerge)
 		{
+			if(node == null)
+			{
+				break;
+			}
 			StateP existingNode = listOfNodesMap.get(node.hashCode());
 			if(existingNode != null)
 			{
@@ -134,6 +138,7 @@ public class RandomHeuristic {
 				{
 					System.out.println("Path length using A* for QueueID "+_queueID+" is : "
 							+ HeuristicSolverUtility.printPathLength(queueHead));
+					HeuristicSolverUtility.printState(queueHead);
 					break;
 				} 
 				else 
