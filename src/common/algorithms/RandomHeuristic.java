@@ -7,22 +7,20 @@ import java.util.PriorityQueue;
 
 import mpi.MPI;
 import mpi.Request;
-import mpi.Status;
 
 import common.constants.Constants;
 import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
 import common.impl.RandomHeuristicGenerator;
 import common.model.StateP;
-import common.queues.PQueue;
 import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
 	
 	Boolean isRunning = false;
 	
-	private Double _bound;
-	private int _numberOfPermutations;
+	private int _sendingInterval;
+	private int _listeningInterval;
 	private int _queueID;
 	private StateP _randomState;
 	
@@ -32,15 +30,14 @@ public class RandomHeuristic {
 	
 	StateP goalState = HeuristicSolverUtility.generateGoalState(Constants.DIMENSION , Constants.w1);
 	
-	public RandomHeuristic(int queueID, Double bound, int numberOfPermutations)
+	public RandomHeuristic(int queueID, Double bound, int sendingInterval, int listeningInterval)
 	{
-		this._bound = bound;
-		this._numberOfPermutations = numberOfPermutations;
+		this._sendingInterval = sendingInterval;
+		this._listeningInterval = listeningInterval;
 		this._queueID = queueID;
 		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue(_queueID);
 		System.out.println("I am Random Heuristic running on core number : "+queueID);
-		hearEvent();
-		run();
+		hearStartEvent();
 	}
 	
 	private void mergeStates(StateP[] listOfStatestoMerge)
@@ -71,11 +68,10 @@ public class RandomHeuristic {
 			}
 		}
 		isRunning = true;
-		this._numberOfPermutations = Constants.CommunicationInterval;
-		run();
+		this._sendingInterval = Constants.CommunicationInterval;
 	}
-
-	private void hearEvent()
+	
+	private void hearStartEvent()
 	{
 		StateP start[] = new StateP[1];
 		
@@ -85,43 +81,42 @@ public class RandomHeuristic {
 		nodePriorityQueue.add(_randomState);
 		listOfNodesMap.put(nodePriorityQueue.hashCode(), this._randomState);
 		
-		// Start SMHA*
+		System.out.println("Start event heard on Queue ID : "+_queueID);
 		isRunning = true;
 		run();
+	}
+
+	private void hearMergeEvent()
+	{
 		
 		int[] sizeArray = new int[1];
-		Request request2 = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
-//		request2.Wait();
+		MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
 		
-		int size = sizeArray[0];
+		Integer size = sizeArray[0];
 		
-		StateP[] arrayOfStates = new StateP[size];
-		Request request3 = MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);		
-//		request3.Wait();
-		
-		isRunning = false;
-		mergeStates(arrayOfStates);
-		
-		System.out.println("I got executed");
-		Boolean[] stop = new Boolean[1];
-		Request request4 = MPI.COMM_WORLD.Irecv(stop, 0, 1, MPI.BOOLEAN, 0, Constants.STOP);		
-//		request4.Wait();
-		isRunning = false;
-		System.out.println("Stopped by MASTER");
+		if(size != null && size > 0)
+		{
+			StateP[] arrayOfStates = new StateP[size];
+			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);			
+			isRunning = false;
+			mergeStates(arrayOfStates);
+			isRunning = true;
+		}
 
 	}
 	
 	private void sendStatesForMerging()
 	{
-		System.out.println("Sending states from slaves");
+		System.out.println("Sending states from Queue ID "+this._queueID);
+		isRunning = false;
 		StateP[] arrayOfStates = nodePriorityQueue.toArray(new StateP[0]);
 		
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
-		Request request2 = MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
-//		request2.Wait();
-		Request request3 = MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);		
-
+		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		
+		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);
+		isRunning = true;
 		
 	}
 	
@@ -133,7 +128,6 @@ public class RandomHeuristic {
 				listOfExpandedNodesMap.put(queueHead.hashCode(), queueHead);
 				StateP queueHeadState = queueHead;
 
-				// If reached goal state
 				if (queueHead.equals(goalState)) 
 				{
 					System.out.println("Path length using A* for QueueID "+_queueID+" is : "
@@ -158,12 +152,20 @@ public class RandomHeuristic {
 						}
 					}
 				}
-//				System.out.println("I am running non stop "+_queueID);
-				if(this._numberOfPermutations-- == 0)
+				
+				if(this._sendingInterval-- == 0)
 				{
 					sendStatesForMerging();
+					System.out.println("Sent states for merging");
+					this._sendingInterval = Constants.CommunicationInterval;
 				}
-//				System.out.println("Continuous Slaves");
+				
+				if(this._listeningInterval-- == 0)
+				{
+					hearMergeEvent();
+					this._sendingInterval = Constants.CommunicationIntervalForAnchor;
+				}
+				System.out.println("Queue is Running wild ID "+_queueID);
 			}
 	}
 
