@@ -14,6 +14,7 @@ import common.utility.HeuristicSolverUtility;
 
 import mpi.MPI;
 import mpi.Request;
+import mpi.Status;
 
 public class AnchorHeuristic 
 {
@@ -28,6 +29,9 @@ public class AnchorHeuristic
 
 	StateP goalState = HeuristicSolverUtility.generateGoalState(
 			Constants.DIMENSION, Constants.w1);
+	int[] sizeArray = new int[1];
+	
+	Request reqH;
 
 	public AnchorHeuristic() {
 		this._listeningInterval = Constants.CommunicationInterval;
@@ -59,7 +63,7 @@ public class AnchorHeuristic
 		StateP[] start = new StateP[1];
 		start[0] = randomState;
 		MPI.COMM_WORLD.Isend(start, 0, 1, MPI.OBJECT, queueID,
-				Constants.STARTOPERATION);
+				Constants.STARTOPERATION).Wait();
 	}
 
 	public void run() 
@@ -104,11 +108,14 @@ public class AnchorHeuristic
 				this._sendingInterval = Constants.CommunicationIntervalForAnchor;
 			}
 			
-			if(this._listeningInterval-- == 0)
-			{
-				hearMergeEvent();
-				this._sendingInterval = Constants.CommunicationInterval;
-			}
+			hearMergeEvent();
+			
+//			if(this._listeningInterval-- == 0)
+//			{
+//				System.out.println("Trying to listen");
+//				hearMergeEvent();
+//				this._listeningInterval = Constants.CommunicationInterval;
+//			}
 			System.out.println("Anchor Queue is running wild");
 		}
 		stopAllChildren();
@@ -125,12 +132,33 @@ public class AnchorHeuristic
 	private void hearMergeEvent() 
 	{
 		System.out.println("Did anchor receive any states ");
-		int[] sizeArray = new int[1];
-		MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE,
-				Constants.SIZE);
 
+		if(reqH == null)
+			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE,
+					Constants.SIZE);
+		
+		Status status = reqH.Test();
+		if(status == null)
+		{
+			System.out.println("Size received by anchor 0 because status is NULL");
+			return;
+		}
+		else
+		{
+			System.out.println("Dude I just got received");
+			reqH.Wait();
+			reqH = null;
+		}
+//		while(status == null) {
+//			status = req.Test();
+//			if(status != null)
+//				break;		
+//		}
+		
+			
 		Integer size = sizeArray[0];
 
+		System.out.println("Size received by anchor "+size);
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];

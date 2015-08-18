@@ -42,10 +42,14 @@ public class RandomHeuristic {
 	
 	private void mergeStates(StateP[] listOfStatestoMerge)
 	{
+//		System.out.println("Size of queue before merging : "+nodePriorityQueue.size());
 		for(StateP node : listOfStatestoMerge)
 		{
+			
+//			System.out.println("This is running Shipra " + ++i + "times in queue "+_queueID);
 			if(node == null)
 			{
+				System.out.println("I am exiting because I am NULL");
 				break;
 			}
 			StateP existingNode = listOfNodesMap.get(node.hashCode());
@@ -57,18 +61,20 @@ public class RandomHeuristic {
 				}
 				else
 				{
+//					System.out.println("Its an Improvement ");
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
 				}
 			}
 			else
 			{
+//				System.out.println("I am getting added");
 				nodePriorityQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
 			}
 		}
+//		System.out.println("Size of queue after merging : "+nodePriorityQueue.size());
 		isRunning = true;
-		this._sendingInterval = Constants.CommunicationInterval;
 	}
 	
 	private void hearStartEvent()
@@ -90,14 +96,14 @@ public class RandomHeuristic {
 	{
 		
 		int[] sizeArray = new int[1];
-		MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE).Wait();
 		
 		Integer size = sizeArray[0];
-		
+		System.out.println("Hearing merge in Child queue "+_queueID+" : size "+size);
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];
-			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE);			
+			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE).Wait();			
 			isRunning = false;
 			mergeStates(arrayOfStates);
 			isRunning = true;
@@ -113,9 +119,11 @@ public class RandomHeuristic {
 		
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
-		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		System.out.println("Broadcasted length from Queue ID "+this._queueID+" is "+sizeArray[0]);
+		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE).Wait();
 		
-		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);
+		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE).Wait();
+		System.out.println("I don't get executed");
 		isRunning = true;
 		
 	}
@@ -163,7 +171,7 @@ public class RandomHeuristic {
 				if(this._listeningInterval-- == 0)
 				{
 					hearMergeEvent();
-					this._sendingInterval = Constants.CommunicationIntervalForAnchor;
+					this._listeningInterval = Constants.CommunicationIntervalForAnchor;
 				}
 				System.out.println("Queue is Running wild ID "+_queueID);
 			}
