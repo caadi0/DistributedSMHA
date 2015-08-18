@@ -4,12 +4,12 @@ public class Constants
 {
 	public static final Double w1 = 1.5;
 	public static final Double w2 = 1.1;
-	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 4;
+	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 3;
 	public static final Boolean debug = true;
-	public static final int CommunicationIntervalForAnchor = 10;
-	public static final int CommunicationInterval = 10;
+	public static final int CommunicationIntervalForAnchor = 100;
+	public static final int CommunicationInterval = 100;
 	public static final Double AStarWeight = 10.0;
-	public static final Integer DIMENSION = 9 ;
+	public static final Integer DIMENSION = 5 ;
 	public static final Integer STARTOPERATION = 1;
 	public static final Integer MERGE = 2;
 	public static final Integer RECEIVE = 3;

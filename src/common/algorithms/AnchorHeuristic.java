@@ -20,6 +20,7 @@ public class AnchorHeuristic
 {
 
 	PriorityQueue<StateP> anchorPriorityQueue = PQueue.createQueue();
+	PriorityQueue<StateP> statesExpandedInLastIterationQueue = PQueue.createQueue();
 	HashMap<Integer, StateP> currentStatesInQueueHashMap = new HashMap<Integer, StateP>();
 	HashMap<Integer, StateP> expandedNodesHashMap = new HashMap<Integer, StateP>();
 
@@ -43,6 +44,7 @@ public class AnchorHeuristic
 
 		// Adding initial state to the list
 		anchorPriorityQueue.add(initialRandomState);
+		statesExpandedInLastIterationQueue.add(initialRandomState);
 		currentStatesInQueueHashMap.put(initialRandomState.hashCode(),
 				initialRandomState);
 
@@ -69,6 +71,9 @@ public class AnchorHeuristic
 		System.out.println("Running Anchor Queue");
 		while (anchorPriorityQueue.isEmpty() == false) {
 			StateP queueHead = anchorPriorityQueue.remove();
+			if(statesExpandedInLastIterationQueue.contains(queueHead)) {
+				statesExpandedInLastIterationQueue.remove(queueHead);
+			}
 			expandedNodesHashMap.put(queueHead.hashCode(), queueHead);
 			StateP queueHeadState = queueHead;
 
@@ -91,6 +96,7 @@ public class AnchorHeuristic
 						newState.setAction(actionOnState);
 
 						anchorPriorityQueue.offer(newState);
+						statesExpandedInLastIterationQueue.offer(newState);
 						currentStatesInQueueHashMap.put(newState.hashCode(),
 								newState);
 					}
@@ -102,6 +108,7 @@ public class AnchorHeuristic
 				{
 					sendStatesForMerging(i);
 				}
+				statesExpandedInLastIterationQueue.clear();
 				this._sendingInterval = Constants.CommunicationIntervalForAnchor;
 			}
 			
@@ -165,7 +172,7 @@ public class AnchorHeuristic
 	private void sendStatesForMerging(Integer queueID)
 	{
 		System.out.println("Sending states from Anchor ");
-		StateP[] arrayOfStates = anchorPriorityQueue.toArray(new StateP[0]);
+		StateP[] arrayOfStates = statesExpandedInLastIterationQueue.toArray(new StateP[0]);
 		
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
@@ -193,9 +200,9 @@ public class AnchorHeuristic
 				}
 			} else {
 				anchorPriorityQueue.add(node);
+				statesExpandedInLastIterationQueue.add(node);
 				currentStatesInQueueHashMap.put(node.hashCode(), node);
 			}
 		}
-		run();
 	}
 }

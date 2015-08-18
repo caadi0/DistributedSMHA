@@ -13,6 +13,7 @@ import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
 import common.impl.RandomHeuristicGenerator;
 import common.model.StateP;
+import common.queues.PQueue;
 import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
@@ -23,6 +24,7 @@ public class RandomHeuristic {
 	private StateP _randomState;
 	
 	PriorityQueue<StateP> nodePriorityQueue;
+	PriorityQueue<StateP> statesExpandedInLastIterationQueue;
 	HashMap<Integer, StateP> listOfNodesMap = new HashMap<Integer, StateP>();
 	HashMap<Integer, StateP> listOfExpandedNodesMap = new HashMap<Integer, StateP>();
 	
@@ -34,13 +36,13 @@ public class RandomHeuristic {
 		this._listeningInterval = listeningInterval;
 		this._queueID = queueID;
 		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue(_queueID);
+		statesExpandedInLastIterationQueue = InadmissibleHeuristicQueue.createQueue(queueID);
 		System.out.println("I am Random Heuristic running on core number : "+queueID);
 		hearStartEvent();
 	}
 	
 	private void mergeStates(StateP[] listOfStatestoMerge)
 	{
-//		System.out.println("Size of queue before merging : "+nodePriorityQueue.size());
 		for(StateP node : listOfStatestoMerge)
 		{
 			
@@ -67,6 +69,7 @@ public class RandomHeuristic {
 			else
 			{
 				nodePriorityQueue.add(node);
+				statesExpandedInLastIterationQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
 			}
 		}
@@ -80,7 +83,8 @@ public class RandomHeuristic {
 		request1.Wait();
 		this._randomState = start[0];
 		nodePriorityQueue.add(_randomState);
-		listOfNodesMap.put(nodePriorityQueue.hashCode(), this._randomState);
+		statesExpandedInLastIterationQueue.add(_randomState);
+		listOfNodesMap.put(_randomState.hashCode(), this._randomState);
 		
 		System.out.println("Start event heard on Queue ID : "+_queueID);
 		run();
@@ -106,7 +110,7 @@ public class RandomHeuristic {
 	private void sendStatesForMerging()
 	{
 		System.out.println("Sending states from Queue ID "+this._queueID);
-		StateP[] arrayOfStates = nodePriorityQueue.toArray(new StateP[0]);
+		StateP[] arrayOfStates = statesExpandedInLastIterationQueue.toArray(new StateP[0]);
 		
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
@@ -115,6 +119,7 @@ public class RandomHeuristic {
 		
 		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);
 		System.out.println("Do I get executed");
+		statesExpandedInLastIterationQueue.clear();
 		
 	}
 	
@@ -123,6 +128,9 @@ public class RandomHeuristic {
 			while (nodePriorityQueue.isEmpty() == false ) 
 			{
 				StateP queueHead = nodePriorityQueue.remove();
+				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
+					statesExpandedInLastIterationQueue.remove(queueHead);
+				}
 				listOfExpandedNodesMap.put(queueHead.hashCode(), queueHead);
 				StateP queueHeadState = queueHead;
 
@@ -147,6 +155,7 @@ public class RandomHeuristic {
 							newNode.setParent(queueHead);
 							newNode.setAction(actionOnState);
 							nodePriorityQueue.offer(newNode);
+							statesExpandedInLastIterationQueue.offer(newNode);
 						}
 					}
 				}
