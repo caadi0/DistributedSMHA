@@ -23,7 +23,6 @@ public class AnchorHeuristic
 	HashMap<Integer, StateP> currentStatesInQueueHashMap = new HashMap<Integer, StateP>();
 	HashMap<Integer, StateP> expandedNodesHashMap = new HashMap<Integer, StateP>();
 
-	Boolean isExpansionAlgorithmRunning = false;
 	Integer _sendingInterval;
 	Integer _listeningInterval;
 
@@ -48,7 +47,6 @@ public class AnchorHeuristic
 				initialRandomState);
 
 		startAllChildren(initialRandomState);
-		isExpansionAlgorithmRunning = true;
 		run();
 
 	}
@@ -69,8 +67,7 @@ public class AnchorHeuristic
 	public void run() 
 	{
 		System.out.println("Running Anchor Queue");
-		while (anchorPriorityQueue.isEmpty() == false
-				&& isExpansionAlgorithmRunning) {
+		while (anchorPriorityQueue.isEmpty() == false) {
 			StateP queueHead = anchorPriorityQueue.remove();
 			expandedNodesHashMap.put(queueHead.hashCode(), queueHead);
 			StateP queueHeadState = queueHead;
@@ -108,15 +105,14 @@ public class AnchorHeuristic
 				this._sendingInterval = Constants.CommunicationIntervalForAnchor;
 			}
 			
-			hearMergeEvent();
+			if(this._listeningInterval-- == 0)
+			{
+				System.out.println("Anchor Trying to listen");
+				this._listeningInterval = Constants.CommunicationInterval;
+				hearMergeEvent();
+			}
 			
-//			if(this._listeningInterval-- == 0)
-//			{
-//				System.out.println("Trying to listen");
-//				hearMergeEvent();
-//				this._listeningInterval = Constants.CommunicationInterval;
-//			}
-			System.out.println("Anchor Queue is running wild");
+			System.out.println("Anchor Heuristic is executing");
 		}
 		stopAllChildren();
 		MPI.Finalize();
@@ -131,30 +127,25 @@ public class AnchorHeuristic
 
 	private void hearMergeEvent() 
 	{
-		System.out.println("Did anchor receive any states ");
 
 		if(reqH == null)
+		{
 			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE,
 					Constants.SIZE);
+		}
 		
 		Status status = reqH.Test();
 		if(status == null)
 		{
-			System.out.println("Size received by anchor 0 because status is NULL");
+			System.out.println("STATUS is NULL");
 			return;
 		}
 		else
 		{
-			System.out.println("Dude I just got received");
+			System.out.println("Incoming MESSAGE");
 			reqH.Wait();
 			reqH = null;
 		}
-//		while(status == null) {
-//			status = req.Test();
-//			if(status != null)
-//				break;		
-//		}
-		
 			
 		Integer size = sizeArray[0];
 
@@ -166,10 +157,8 @@ public class AnchorHeuristic
 					MPI.ANY_SOURCE, Constants.MERGE);
 
 			System.out.println("Anchor received states for merging");
-			isExpansionAlgorithmRunning = false;
 			merge(arrayOfStates);
 			Arrays.fill(arrayOfStates, null);
-			isExpansionAlgorithmRunning = true;
 		}
 	}
 	
@@ -188,7 +177,6 @@ public class AnchorHeuristic
 	}
 
 	private void merge(StateP[] listOfReceivedNodes) {
-		System.out.println("I reached here ttoo");
 		for (StateP node : listOfReceivedNodes) {
 			if (node == null) {
 				break;
@@ -208,7 +196,6 @@ public class AnchorHeuristic
 				currentStatesInQueueHashMap.put(node.hashCode(), node);
 			}
 		}
-		isExpansionAlgorithmRunning = true;
 		run();
 	}
 }

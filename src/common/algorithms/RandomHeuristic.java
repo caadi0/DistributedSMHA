@@ -17,8 +17,6 @@ import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
 	
-	Boolean isRunning = false;
-	
 	private int _sendingInterval;
 	private int _listeningInterval;
 	private int _queueID;
@@ -68,13 +66,10 @@ public class RandomHeuristic {
 			}
 			else
 			{
-//				System.out.println("I am getting added");
 				nodePriorityQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
 			}
 		}
-//		System.out.println("Size of queue after merging : "+nodePriorityQueue.size());
-		isRunning = true;
 	}
 	
 	private void hearStartEvent()
@@ -88,7 +83,6 @@ public class RandomHeuristic {
 		listOfNodesMap.put(nodePriorityQueue.hashCode(), this._randomState);
 		
 		System.out.println("Start event heard on Queue ID : "+_queueID);
-		isRunning = true;
 		run();
 	}
 
@@ -103,10 +97,8 @@ public class RandomHeuristic {
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];
-			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE).Wait();			
-			isRunning = false;
+			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE).Wait();
 			mergeStates(arrayOfStates);
-			isRunning = true;
 		}
 
 	}
@@ -114,23 +106,21 @@ public class RandomHeuristic {
 	private void sendStatesForMerging()
 	{
 		System.out.println("Sending states from Queue ID "+this._queueID);
-		isRunning = false;
 		StateP[] arrayOfStates = nodePriorityQueue.toArray(new StateP[0]);
 		
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
 		System.out.println("Broadcasted length from Queue ID "+this._queueID+" is "+sizeArray[0]);
-		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE).Wait();
+		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
 		
-		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE).Wait();
-		System.out.println("I don't get executed");
-		isRunning = true;
+		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);
+		System.out.println("Do I get executed");
 		
 	}
 	
 	private void run()
 	{
-			while (nodePriorityQueue.isEmpty() == false && isRunning == true) 
+			while (nodePriorityQueue.isEmpty() == false ) 
 			{
 				StateP queueHead = nodePriorityQueue.remove();
 				listOfExpandedNodesMap.put(queueHead.hashCode(), queueHead);
@@ -173,7 +163,7 @@ public class RandomHeuristic {
 					hearMergeEvent();
 					this._listeningInterval = Constants.CommunicationIntervalForAnchor;
 				}
-				System.out.println("Queue is Running wild ID "+_queueID);
+				System.out.println("Child Heuristic is executing, ID : "+_queueID);
 			}
 	}
 
