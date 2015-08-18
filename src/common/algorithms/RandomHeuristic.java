@@ -127,6 +127,7 @@ public class RandomHeuristic {
 	{
 			while (nodePriorityQueue.isEmpty() == false ) 
 			{
+				HeuristicSolverUtility.printAllStatesInQueue(nodePriorityQueue);
 				StateP queueHead = nodePriorityQueue.remove();
 				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 					statesExpandedInLastIterationQueue.remove(queueHead);

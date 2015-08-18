@@ -127,9 +127,9 @@ public class AnchorHeuristic
 
 	private void stopAllChildren() 
 	{
-		Boolean[] stop = new Boolean[1];
-		stop[0] = true;
-		MPI.COMM_WORLD.Bcast(stop, 0, 1, MPI.OBJECT, Constants.STOP);
+//		Boolean[] stop = new Boolean[1];
+//		stop[0] = true;
+//		MPI.COMM_WORLD.Bcast(stop, 0, 1, MPI.OBJECT, Constants.STOP);
 	}
 
 	private void hearMergeEvent() 
