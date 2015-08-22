@@ -125,7 +125,7 @@ public class AStar {
 					
 				}
 			}
-			HeuristicSolverUtility.printAllHeuriticValuesInQueue(openQueue);
+			HeuristicSolverUtility.printAllCostsInQueue(openQueue);
 //			HeuristicSolverUtility.printAllStatesInQueue(openQueue);
 		}
 //		HeuristicSolverUtility.printHashMap(closedMap);

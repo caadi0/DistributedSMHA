@@ -7,8 +7,6 @@ import common.model.StateP;
 public class InadmissibleHeuristicQueue 
 {
 public static class HeuristicComparator implements Comparator<StateP>{	
-		
-		int heuristic = 0;
 
 		public int compare(StateP o1, StateP o2) {
 
@@ -28,16 +26,10 @@ public static class HeuristicComparator implements Comparator<StateP>{
 				return -1;
 			
 		}
-		
-		public void setHeuristic(int h)
-		{
-			heuristic = h;
-		}
 	}
 	
-	public static java.util.PriorityQueue<StateP> createQueue(int h) {
+	public static java.util.PriorityQueue<StateP> createQueue() {
 		HeuristicComparator hc = new HeuristicComparator();
-		hc.setHeuristic(h);
 		return new java.util.PriorityQueue<StateP>(10000, hc);
 	}
 }

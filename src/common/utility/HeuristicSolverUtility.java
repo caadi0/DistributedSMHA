@@ -130,14 +130,26 @@ public class HeuristicSolverUtility
 		System.out.println("");
 	}
 	
-	public static void printAllHeuriticValuesInQueue(PriorityQueue<StateP> q) 
+	public static void printHashCodeInQueue(PriorityQueue<StateP> q) 
 	{
 		Iterator<StateP> qIter = q.iterator();
-		System.out.print("Heuristic values present in Queue  :   ");
+		System.out.print("Hashcodes present in Queue  :   ");
 		while(qIter.hasNext()) 
 		{
 			StateP n = qIter.next();
-			System.out.print(n.getHeuristicCost() + " ");
+			System.out.print(n.hashCode() + " ");
+		}
+		System.out.println("");
+	}
+	
+	public static void printAllCostsInQueue(PriorityQueue<StateP> q) 
+	{
+		Iterator<StateP> qIter = q.iterator();
+		System.out.print("Cost values present in Queue  :   ");
+		while(qIter.hasNext()) 
+		{
+			StateP n = qIter.next();
+			System.out.print(n.getKey() + " ");
 		}
 		System.out.println("");
 	}

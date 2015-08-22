@@ -35,8 +35,8 @@ public class RandomHeuristic {
 		this._sendingInterval = sendingInterval;
 		this._listeningInterval = listeningInterval;
 		this._queueID = queueID;
-		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue(_queueID);
-		statesExpandedInLastIterationQueue = InadmissibleHeuristicQueue.createQueue(queueID);
+		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue();
+		statesExpandedInLastIterationQueue = InadmissibleHeuristicQueue.createQueue();
 		System.out.println("I am Random Heuristic running on core number : "+queueID);
 		hearStartEvent();
 	}
@@ -127,8 +127,9 @@ public class RandomHeuristic {
 	{
 			while (nodePriorityQueue.isEmpty() == false ) 
 			{
-				HeuristicSolverUtility.printAllStatesInQueue(nodePriorityQueue);
+//				HeuristicSolverUtility.printAllHeuriticValuesInQueue(nodePriorityQueue);
 				StateP queueHead = nodePriorityQueue.remove();
+				listOfNodesMap.remove(queueHead);
 				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 					statesExpandedInLastIterationQueue.remove(queueHead);
 				}
@@ -150,13 +151,21 @@ public class RandomHeuristic {
 					while (actIter.hasNext()) {
 						Action actionOnState = actIter.next();
 						StateP newState = actionOnState.applyTo(queueHeadState);
-						StateP newNode = new StateP(newState, Constants.w1);
-						if (!listOfExpandedNodesMap.containsKey(newNode.hashCode())) {
-							newNode.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, newNode));
-							newNode.setParent(queueHead);
-							newNode.setAction(actionOnState);
-							nodePriorityQueue.offer(newNode);
-							statesExpandedInLastIterationQueue.offer(newNode);
+						if (!listOfExpandedNodesMap.containsKey(newState.hashCode())) {
+							newState.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, newState));
+							newState.setParent(queueHead);
+							newState.setAction(actionOnState);
+							
+							
+							if(!listOfNodesMap.containsKey(newState.hashCode())) {
+								nodePriorityQueue.offer(newState);
+								listOfNodesMap.put(newState.hashCode(), newState);
+								statesExpandedInLastIterationQueue.offer(newState);
+							} else {
+								StateP existingNode = listOfNodesMap.get(newState.hashCode());
+								existingNode.setPathCost(newState.getPathCost());
+								existingNode.setParent(newState.getParent());
+							}
 						}
 					}
 				}

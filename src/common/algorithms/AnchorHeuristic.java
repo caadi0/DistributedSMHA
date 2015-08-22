@@ -70,7 +70,10 @@ public class AnchorHeuristic
 	{
 		System.out.println("Running Anchor Queue");
 		while (anchorPriorityQueue.isEmpty() == false) {
+			HeuristicSolverUtility.printAllCostsInQueue(anchorPriorityQueue);
 			StateP queueHead = anchorPriorityQueue.remove();
+			System.out.println("Removed Value "+ queueHead.getKey());
+			currentStatesInQueueHashMap.remove(queueHead);
 			if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 				statesExpandedInLastIterationQueue.remove(queueHead);
 			}
@@ -94,11 +97,17 @@ public class AnchorHeuristic
 								.calculate(newState));
 						newState.setParent(queueHead);
 						newState.setAction(actionOnState);
-
-						anchorPriorityQueue.offer(newState);
-						statesExpandedInLastIterationQueue.offer(newState);
-						currentStatesInQueueHashMap.put(newState.hashCode(),
-								newState);
+						
+						if(!currentStatesInQueueHashMap.containsKey(newState.hashCode())) {
+							anchorPriorityQueue.offer(newState);
+							statesExpandedInLastIterationQueue.offer(newState);
+							currentStatesInQueueHashMap.put(newState.hashCode(),
+									newState);
+						} else {
+							StateP existingNode = currentStatesInQueueHashMap.get(newState.hashCode());
+							existingNode.setPathCost(newState.getPathCost());
+							existingNode.setParent(newState.getParent());
+						}
 					}
 				}
 			}

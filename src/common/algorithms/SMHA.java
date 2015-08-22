@@ -43,7 +43,8 @@ public class SMHA {
 		
 		for(int i=0; i<Constants.NumberOfInadmissibleHeuristicsForSMHAStar; i++)
 		{
-			PriorityQueue<StateP> prq = InadmissibleHeuristicQueue.createQueue(i+1);
+			// TODO
+			PriorityQueue<StateP> prq = InadmissibleHeuristicQueue.createQueue();
 			prq.add(nStart);
 			pqList.add(prq);
 		}
