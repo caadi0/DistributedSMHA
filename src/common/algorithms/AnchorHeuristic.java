@@ -104,9 +104,14 @@ public class AnchorHeuristic
 							currentStatesInQueueHashMap.put(newState.hashCode(),
 									newState);
 						} else {
+							System.out.println("KEY MATCH");
 							StateP existingNode = currentStatesInQueueHashMap.get(newState.hashCode());
-							existingNode.setPathCost(newState.getPathCost());
-							existingNode.setParent(newState.getParent());
+							if(existingNode.getPathCost() < newState.getPathCost()) {
+								// Do nothing
+							} else {
+								existingNode.setPathCost(newState.getPathCost());
+								existingNode.setParent(newState.getParent());
+							}
 						}
 					}
 				}

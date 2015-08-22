@@ -149,7 +149,7 @@ public class HeuristicSolverUtility
 		while(qIter.hasNext()) 
 		{
 			StateP n = qIter.next();
-			System.out.print(n.getKey() + " ");
+			System.out.print(n.getHeuristicCost() + " : " +n.hashCode() +" ; ");
 		}
 		System.out.println("");
 	}
