@@ -169,6 +169,7 @@ public class RandomHeuristic {
 								} else {
 									existingNode.setPathCost(newState.getPathCost());
 									existingNode.setParent(newState.getParent());
+									existingNode.setAction(actionOnState);
 								}
 								
 								
