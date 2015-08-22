@@ -113,6 +113,7 @@ public class AnchorHeuristic
 							} else {
 								existingNode.setPathCost(newState.getPathCost());
 								existingNode.setParent(newState.getParent());
+								existingNode.setAction(actionOnState);
 							}
 						}
 					}
