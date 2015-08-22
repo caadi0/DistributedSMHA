@@ -47,6 +47,8 @@ public class AnchorHeuristic
 		statesExpandedInLastIterationQueue.add(initialRandomState);
 		currentStatesInQueueHashMap.put(initialRandomState.hashCode(),
 				initialRandomState);
+		
+		System.out.println("goal state is: "+goalState.hashCode());
 
 		startAllChildren(initialRandomState);
 		run();
