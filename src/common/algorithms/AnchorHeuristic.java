@@ -40,7 +40,7 @@ public class AnchorHeuristic
 				Constants.DIMENSION, Constants.w1);
 
 		initialRandomState.setPathCost(0);
-		initialRandomState.setHeuristicCost((double) ManhattanDistance.calculate(initialRandomState));
+		initialRandomState.setHeuristicCost((double) LinearConflict.calculate(initialRandomState));
 
 		// Adding initial state to the list
 		anchorPriorityQueue.add(initialRandomState);
@@ -96,7 +96,7 @@ public class AnchorHeuristic
 //					System.out.println("Actions being performed are "+actionOnState.getMove().toString());
 					StateP newState = actionOnState.applyTo(queueHeadState);
 					if (!expandedNodesHashMap.containsKey(newState.hashCode())) {
-						newState.setHeuristicCost((double) ManhattanDistance
+						newState.setHeuristicCost((double) LinearConflict
 								.calculate(newState));
 						newState.setParent(queueHead);
 						
@@ -135,7 +135,7 @@ public class AnchorHeuristic
 				hearMergeEvent();
 			}
 			
-			System.out.println("Anchor Heuristic is executing");
+//			System.out.println("Anchor Heuristic is executing");
 		}
 		stopAllChildren();
 		MPI.Finalize();
@@ -177,7 +177,7 @@ public class AnchorHeuristic
 		{
 			StateP[] arrayOfStates = new StateP[size];
 			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT,
-					MPI.ANY_SOURCE, Constants.MERGE);
+					MPI.ANY_SOURCE, Constants.MERGE).Wait();
 
 			System.out.println("Anchor received states for merging");
 			merge(arrayOfStates);
@@ -206,16 +206,18 @@ public class AnchorHeuristic
 			}
 			StateP existingNode = currentStatesInQueueHashMap.get(node
 					.hashCode());
-			System.out.println("I am merging states");
+//			System.out.println("I am merging states");
 			if (existingNode != null) {
 				if (existingNode.getPathCost() < node.getPathCost()) {
 					// Nothing to do here
 				} else {
+					System.out.println("Improving state");
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
 				}
 			} else {
-				node.setHeuristicCost((double) ManhattanDistance.calculate(node));
+				System.out.println("Adding state");
+				node.setHeuristicCost((double) LinearConflict.calculate(node));
 				anchorPriorityQueue.add(node);
 				statesExpandedInLastIterationQueue.add(node);
 				currentStatesInQueueHashMap.put(node.hashCode(), node);

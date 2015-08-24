@@ -6,8 +6,8 @@ public class Constants
 	public static final Double w2 = 10.0;
 	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 3;
 	public static final Boolean debug = true;
-	public static final int CommunicationIntervalForAnchor = 100;
-	public static final int CommunicationInterval = 100;
+	public static final int CommunicationIntervalForAnchor = 1000;
+	public static final int CommunicationInterval = 1000;
 	public static final Double AStarWeight = 10.0;
 	public static final Integer DIMENSION = 9;
 	public static final Integer STARTOPERATION = 1;

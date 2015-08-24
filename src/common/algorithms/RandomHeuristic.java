@@ -202,7 +202,7 @@ public class RandomHeuristic {
 					hearMergeEvent();
 					this._listeningInterval = Constants.CommunicationIntervalForAnchor;
 				}
-				System.out.println("Child Heuristic is executing, ID : "+_queueID);
+//				System.out.println("Child Heuristic is executing, ID : "+_queueID);
 			}
 	}
 
