@@ -13,7 +13,6 @@ import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
 import common.impl.RandomHeuristicGenerator;
 import common.model.StateP;
-import common.queues.PQueue;
 import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
@@ -68,9 +67,22 @@ public class RandomHeuristic {
 			}
 			else
 			{
+				node.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, node));
 				nodePriorityQueue.add(node);
 				statesExpandedInLastIterationQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
+			}
+			StateP parentNode = node.getParent();
+			if(parentNode != null) {
+				if(listOfNodesMap.containsKey(parentNode.hashCode())) {
+					nodePriorityQueue.remove(parentNode);
+					listOfNodesMap.remove(parentNode.hashCode());
+					statesExpandedInLastIterationQueue.remove(parentNode);
+				} else {
+					// Maybe its yet to be added
+				}
+			} else {
+				// THis would be the case of Anchor node
 			}
 		}
 	}
@@ -129,7 +141,7 @@ public class RandomHeuristic {
 			{
 //				HeuristicSolverUtility.printAllHeuriticValuesInQueue(nodePriorityQueue);
 				StateP queueHead = nodePriorityQueue.remove();
-				listOfNodesMap.remove(queueHead);
+				listOfNodesMap.remove(queueHead.hashCode());
 				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 					statesExpandedInLastIterationQueue.remove(queueHead);
 				}

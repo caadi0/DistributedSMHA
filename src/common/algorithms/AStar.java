@@ -18,9 +18,9 @@ public class AStar {
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		
-		PrintStream out = new PrintStream(new FileOutputStream("C:\\Users\\AadityaComputer\\Desktop\\output.txt"));
-		System.setOut(out);
-		
+//		PrintStream out = new PrintStream(new FileOutputStream("C:\\Users\\AadityaComputer\\Desktop\\output.txt"));
+//		System.setOut(out);
+//		
 		AStar astar = new AStar();
 		astar.solveUsingAStar(HeuristicSolverUtility.createRandom
 				(Constants.DIMENSION, Constants.AStarWeight));

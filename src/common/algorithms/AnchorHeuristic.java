@@ -61,7 +61,7 @@ public class AnchorHeuristic
 		}
 	}
 
-	private void startChild(StateP randomState, int queueID) {
+	private static void startChild(StateP randomState, int queueID) {
 		StateP[] start = new StateP[1];
 		start[0] = randomState;
 		MPI.COMM_WORLD.Isend(start, 0, 1, MPI.OBJECT, queueID,
@@ -72,10 +72,10 @@ public class AnchorHeuristic
 	{
 		System.out.println("Running Anchor Queue");
 		while (anchorPriorityQueue.isEmpty() == false) {
-			HeuristicSolverUtility.printAllCostsInQueue(anchorPriorityQueue);
+//			HeuristicSolverUtility.printAllCostsInQueue(anchorPriorityQueue);
 			StateP queueHead = anchorPriorityQueue.remove();
-			System.out.println("Removed Value "+ queueHead.getKey());
-			currentStatesInQueueHashMap.remove(queueHead);
+			System.out.println("Removed Value "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
+			currentStatesInQueueHashMap.remove(queueHead.hashCode());
 			if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 				statesExpandedInLastIterationQueue.remove(queueHead);
 			}
@@ -93,12 +93,12 @@ public class AnchorHeuristic
 				Iterator<Action> actIter = listOfPossibleActions.iterator();
 				while (actIter.hasNext()) {
 					Action actionOnState = actIter.next();
+//					System.out.println("Actions being performed are "+actionOnState.getMove().toString());
 					StateP newState = actionOnState.applyTo(queueHeadState);
 					if (!expandedNodesHashMap.containsKey(newState.hashCode())) {
 						newState.setHeuristicCost((double) ManhattanDistance
 								.calculate(newState));
 						newState.setParent(queueHead);
-						newState.setAction(actionOnState);
 						
 						if(!currentStatesInQueueHashMap.containsKey(newState.hashCode())) {
 							anchorPriorityQueue.offer(newState);
@@ -113,7 +113,6 @@ public class AnchorHeuristic
 							} else {
 								existingNode.setPathCost(newState.getPathCost());
 								existingNode.setParent(newState.getParent());
-								existingNode.setAction(actionOnState);
 							}
 						}
 					}
@@ -216,9 +215,24 @@ public class AnchorHeuristic
 					existingNode.setParent(node.getParent());
 				}
 			} else {
+				node.setHeuristicCost((double) ManhattanDistance.calculate(node));
 				anchorPriorityQueue.add(node);
 				statesExpandedInLastIterationQueue.add(node);
 				currentStatesInQueueHashMap.put(node.hashCode(), node);
+			}
+			
+			StateP parentNode = node.getParent();
+			if(parentNode != null) {
+				if(currentStatesInQueueHashMap.containsKey(parentNode.hashCode())) {
+					System.out.println("REMOVING PARENT");
+					anchorPriorityQueue.remove(parentNode);
+					statesExpandedInLastIterationQueue.remove(parentNode);
+					currentStatesInQueueHashMap.remove(parentNode.hashCode());
+				} else {
+					// Maybe its yet to be added
+				}
+			} else {
+				// THis would be the case of Anchor node
 			}
 		}
 	}
