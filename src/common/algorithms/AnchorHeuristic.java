@@ -111,8 +111,10 @@ public class AnchorHeuristic
 							if(existingNode.getPathCost() < newState.getPathCost()) {
 								// Do nothing
 							} else {
+								anchorPriorityQueue.remove(existingNode);
 								existingNode.setPathCost(newState.getPathCost());
 								existingNode.setParent(newState.getParent());
+								anchorPriorityQueue.add(existingNode);
 							}
 						}
 					}
@@ -130,9 +132,12 @@ public class AnchorHeuristic
 			
 			if(this._listeningInterval-- == 0)
 			{
-				System.out.println("Anchor Trying to listen");
+				for(int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
+				{
+					System.out.println("Anchor Trying to listen");
+//					hearMergeEvent(i);
+				}
 				this._listeningInterval = Constants.CommunicationInterval;
-				hearMergeEvent();
 			}
 			
 //			System.out.println("Anchor Heuristic is executing");
@@ -148,12 +153,12 @@ public class AnchorHeuristic
 //		MPI.COMM_WORLD.Bcast(stop, 0, 1, MPI.OBJECT, Constants.STOP);
 	}
 
-	private void hearMergeEvent() 
+	private void hearMergeEvent(Integer queueID) 
 	{
 
 		if(reqH == null)
 		{
-			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, MPI.ANY_SOURCE,
+			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, queueID,
 					Constants.SIZE);
 		}
 		
@@ -177,7 +182,7 @@ public class AnchorHeuristic
 		{
 			StateP[] arrayOfStates = new StateP[size];
 			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT,
-					MPI.ANY_SOURCE, Constants.MERGE).Wait();
+					queueID, Constants.MERGE).Wait();
 
 			System.out.println("Anchor received states for merging");
 			merge(arrayOfStates);
@@ -211,9 +216,11 @@ public class AnchorHeuristic
 				if (existingNode.getPathCost() < node.getPathCost()) {
 					// Nothing to do here
 				} else {
+					anchorPriorityQueue.remove(existingNode);
 					System.out.println("Improving state");
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
+					anchorPriorityQueue.add(existingNode);
 				}
 			} else {
 				System.out.println("Adding state");

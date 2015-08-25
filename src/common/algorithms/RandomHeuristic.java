@@ -1,5 +1,6 @@
 package common.algorithms;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.PriorityQueue;
 
 import mpi.MPI;
 import mpi.Request;
+import mpi.Status;
 
 import common.constants.Constants;
 import common.impl.Action;
@@ -21,6 +23,9 @@ public class RandomHeuristic {
 	private int _listeningInterval;
 	private int _queueID;
 	private StateP _randomState;
+	
+	Request reqH;
+	int[] sizeArray = new int[1];
 	
 	PriorityQueue<StateP> nodePriorityQueue;
 	PriorityQueue<StateP> statesExpandedInLastIterationQueue;
@@ -61,8 +66,10 @@ public class RandomHeuristic {
 				else
 				{
 //					System.out.println("Its an Improvement ");
+					nodePriorityQueue.remove(existingNode);
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
+					nodePriorityQueue.add(existingNode);
 				}
 			}
 			else
@@ -105,16 +112,33 @@ public class RandomHeuristic {
 	private void hearMergeEvent()
 	{
 		
-		int[] sizeArray = new int[1];
-		MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE).Wait();
+		if(reqH == null)
+		{
+			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		}
 		
+		Status status = reqH.Test();
+		if(status == null)
+		{
+			System.out.println("STATUS is NULL");
+			return;
+		}
+		else
+		{
+			System.out.println("Incoming MESSAGE");
+			reqH.Wait();
+			reqH = null;
+		}
+			
 		Integer size = sizeArray[0];
-		System.out.println("Hearing merge in Child queue "+_queueID+" : size "+size);
+
+		System.out.println("Size received by anchor "+size);
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];
 			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE).Wait();
 			mergeStates(arrayOfStates);
+			Arrays.fill(arrayOfStates, null);
 		}
 
 	}
@@ -179,9 +203,11 @@ public class RandomHeuristic {
 								if(existingNode.getPathCost() < newState.getPathCost()) {
 									// Do nothing
 								} else {
+									nodePriorityQueue.remove(existingNode);
 									existingNode.setPathCost(newState.getPathCost());
 									existingNode.setParent(newState.getParent());
 									existingNode.setAction(actionOnState);
+									nodePriorityQueue.add(existingNode);
 								}
 								
 								
