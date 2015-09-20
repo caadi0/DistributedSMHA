@@ -9,7 +9,6 @@ import java.util.PriorityQueue;
 import mpi.MPI;
 import mpi.Request;
 import mpi.Status;
-
 import common.constants.Constants;
 import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
@@ -59,13 +58,13 @@ public class RandomHeuristic {
 			StateP existingNode = listOfNodesMap.get(node.hashCode());
 			if(existingNode != null)
 			{
-				if(existingNode.getPathCost() < node.getPathCost())
+				if(existingNode.getPathCost() <= node.getPathCost())
 				{
 					// Nothing to do here
 				}
 				else
 				{
-//					System.out.println("Its an Improvement ");
+//					System.out.println("Improving state from "+existingNode.getPathCost()+" to "+node.getPathCost());
 					nodePriorityQueue.remove(existingNode);
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
@@ -76,7 +75,7 @@ public class RandomHeuristic {
 			{
 				node.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, node));
 				nodePriorityQueue.add(node);
-				statesExpandedInLastIterationQueue.add(node);
+//				statesExpandedInLastIterationQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
 			}
 			StateP parentNode = node.getParent();
@@ -125,14 +124,14 @@ public class RandomHeuristic {
 		}
 		else
 		{
-			System.out.println("Incoming MESSAGE");
+			System.out.println("Incoming MESSAGE in random queue "+_queueID);
 			reqH.Wait();
 			reqH = null;
 		}
 			
 		Integer size = sizeArray[0];
 
-		System.out.println("Size received by anchor "+size);
+		System.out.println("Size received by random "+size);
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];
@@ -163,8 +162,8 @@ public class RandomHeuristic {
 	{
 			while (nodePriorityQueue.isEmpty() == false ) 
 			{
-//				HeuristicSolverUtility.printAllHeuriticValuesInQueue(nodePriorityQueue);
 				StateP queueHead = nodePriorityQueue.remove();
+				System.out.println("Removed Value in Random Queue "+_queueID + " "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
 				listOfNodesMap.remove(queueHead.hashCode());
 				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 					statesExpandedInLastIterationQueue.remove(queueHead);
@@ -195,6 +194,8 @@ public class RandomHeuristic {
 							
 							if(!listOfNodesMap.containsKey(newState.hashCode())) {
 								nodePriorityQueue.offer(newState);
+								
+								System.out.println("Added Value in Random Queue "+_queueID + "  " +newState.getPathCost() + " : "+newState.getHeuristicCost() + " ; ");
 								listOfNodesMap.put(newState.hashCode(), newState);
 								statesExpandedInLastIterationQueue.offer(newState);
 							} else {
