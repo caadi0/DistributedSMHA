@@ -14,33 +14,32 @@ import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
 import common.impl.RandomHeuristicGenerator;
 import common.model.StateP;
+import common.model.StatePInitialRandom;
 import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
 	
-	private int _sendingInterval;
-	private int _listeningInterval;
 	private int _queueID;
 	private StateP _randomState;
-	
-	Request reqH;
-	int[] sizeArray = new int[1];
+	private double initialBound;
 	
 	PriorityQueue<StateP> nodePriorityQueue;
 	PriorityQueue<StateP> statesExpandedInLastIterationQueue;
 	HashMap<Integer, StateP> listOfNodesMap = new HashMap<Integer, StateP>();
 	HashMap<Integer, StateP> listOfExpandedNodesMap = new HashMap<Integer, StateP>();
 	
+	StatePInitialRandom initialRandomStateToCalculateHeuristicValue = null;
+	
 	StateP goalState = HeuristicSolverUtility.generateGoalState(Constants.DIMENSION , Constants.w1);
 	
-	public RandomHeuristic(int queueID, Double bound, int sendingInterval, int listeningInterval)
+	public RandomHeuristic(int queueID, Double bound)
 	{
-		this._sendingInterval = sendingInterval;
-		this._listeningInterval = listeningInterval;
 		this._queueID = queueID;
 		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue();
 		statesExpandedInLastIterationQueue = InadmissibleHeuristicQueue.createQueue();
 		System.out.println("I am Random Heuristic running on core number : "+queueID);
+		initialRandomStateToCalculateHeuristicValue = new StatePInitialRandom(HeuristicSolverUtility.createRandom(
+				Constants.DIMENSION, Constants.w1, Constants.NumberOfBackwardSteps), Constants.w1);
 		hearStartEvent();
 	}
 	
@@ -48,8 +47,6 @@ public class RandomHeuristic {
 	{
 		for(StateP node : listOfStatestoMerge)
 		{
-			
-//			System.out.println("This is running Shipra " + ++i + "times in queue "+_queueID);
 			if(node == null)
 			{
 				System.out.println("I am exiting because I am NULL");
@@ -73,7 +70,7 @@ public class RandomHeuristic {
 			}
 			else
 			{
-				node.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, node));
+				node.setHeuristicCost(RandomHeuristicGenerator.getHeuristicValue(node, initialRandomStateToCalculateHeuristicValue));
 				nodePriorityQueue.add(node);
 //				statesExpandedInLastIterationQueue.add(node);
 				listOfNodesMap.put(node.hashCode(), node);
@@ -100,9 +97,14 @@ public class RandomHeuristic {
 		Request request1 = MPI.COMM_WORLD.Irecv(start, 0, 1, MPI.OBJECT, 0, Constants.STARTOPERATION);
 		request1.Wait();
 		this._randomState = start[0];
+		this._randomState.setHeuristicCost(RandomHeuristicGenerator.getHeuristicValue(_randomState, initialRandomStateToCalculateHeuristicValue));
 		nodePriorityQueue.add(_randomState);
 		statesExpandedInLastIterationQueue.add(_randomState);
 		listOfNodesMap.put(_randomState.hashCode(), this._randomState);
+		
+		double[] boundArray = new double[1];
+		MPI.COMM_WORLD.Irecv(boundArray, 0, 1, MPI.DOUBLE, 0, Constants.BOUND).Wait();
+		this.initialBound = boundArray[0];
 		
 		System.out.println("Start event heard on Queue ID : "+_queueID);
 		run();
@@ -110,36 +112,9 @@ public class RandomHeuristic {
 
 	private void hearMergeEvent()
 	{
-		
-		if(reqH == null)
-		{
-			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
-		}
-		
-		Status status = reqH.Test();
-		if(status == null)
-		{
-			System.out.println("STATUS is NULL");
-			return;
-		}
-		else
-		{
-			System.out.println("Incoming MESSAGE in random queue "+_queueID);
-			reqH.Wait();
-			reqH = null;
-		}
-			
-		Integer size = sizeArray[0];
-
-		System.out.println("Size received by random "+size);
-		if(size != null && size > 0)
-		{
-			StateP[] arrayOfStates = new StateP[size];
-			MPI.COMM_WORLD.Irecv(arrayOfStates, 0, size, MPI.OBJECT, 0, Constants.MERGE).Wait();
-			mergeStates(arrayOfStates);
-			Arrays.fill(arrayOfStates, null);
-		}
-
+		double[] boundArray = new double[1];
+		MPI.COMM_WORLD.Irecv(boundArray, 0, 1, MPI.DOUBLE, 0, Constants.BOUND).Wait();
+		this.initialBound = boundArray[0];
 	}
 	
 	private void sendStatesForMerging()
@@ -150,28 +125,37 @@ public class RandomHeuristic {
 		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
 		System.out.println("Broadcasted length from Queue ID "+this._queueID+" is "+sizeArray[0]);
-		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE);
+		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, 0, Constants.SIZE).Wait();
 		
-		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE);
-		System.out.println("Do I get executed");
+		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, 0, Constants.MERGE).Wait();
 		statesExpandedInLastIterationQueue.clear();
+		
+		hearMergeEvent();
 		
 	}
 	
 	private void run()
 	{
-			while (nodePriorityQueue.isEmpty() == false ) 
+		int numberOfStatesExpanded = 1;
+		double currentMinKeyValue = -1.0;
+			while (nodePriorityQueue.isEmpty() == false && (currentMinKeyValue < initialBound)) 
 			{
 				StateP queueHead = nodePriorityQueue.remove();
-				System.out.println("Removed Value in Random Queue "+_queueID + " "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
+//				System.out.println("Removed Value in Random Queue "+_queueID + " "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
 				listOfNodesMap.remove(queueHead.hashCode());
 				if(statesExpandedInLastIterationQueue.contains(queueHead)) {
 					statesExpandedInLastIterationQueue.remove(queueHead);
 				}
 				listOfExpandedNodesMap.put(queueHead.hashCode(), queueHead);
 				StateP queueHeadState = queueHead;
-
-				if (queueHead.equals(goalState)) 
+				
+				currentMinKeyValue = queueHead.getKey();
+				
+				System.out.println("Bound for Queue "+_queueID+" : "+initialBound+" : and MinKey is : "+currentMinKeyValue + " "+queueHead.getPathCost()
+						
+						+" "+queueHead.getHeuristicCost());
+				
+				if (queueHead.equals(initialRandomStateToCalculateHeuristicValue)) 
 				{
 					System.out.println("Path length using A* for QueueID "+_queueID+" is : "
 							+ HeuristicSolverUtility.printPathLength(queueHead));
@@ -185,9 +169,10 @@ public class RandomHeuristic {
 					Iterator<Action> actIter = listOfPossibleActions.iterator();
 					while (actIter.hasNext()) {
 						Action actionOnState = actIter.next();
+						System.out.println("Number of expanded states in Queue ID "+ _queueID+" : "+ ++numberOfStatesExpanded);
 						StateP newState = actionOnState.applyTo(queueHeadState);
 						if (!listOfExpandedNodesMap.containsKey(newState.hashCode())) {
-							newState.setHeuristicCost(RandomHeuristicGenerator.generateRandomHeuristic(_queueID, newState));
+							newState.setHeuristicCost(RandomHeuristicGenerator.getHeuristicValue(newState, initialRandomStateToCalculateHeuristicValue));
 							newState.setParent(queueHead);
 							newState.setAction(actionOnState);
 							
@@ -195,7 +180,7 @@ public class RandomHeuristic {
 							if(!listOfNodesMap.containsKey(newState.hashCode())) {
 								nodePriorityQueue.offer(newState);
 								
-								System.out.println("Added Value in Random Queue "+_queueID + "  " +newState.getPathCost() + " : "+newState.getHeuristicCost() + " ; ");
+//								System.out.println("Added Value in Random Queue "+_queueID + "  " +newState.getPathCost() + " : "+newState.getHeuristicCost() + " ; ");
 								listOfNodesMap.put(newState.hashCode(), newState);
 								statesExpandedInLastIterationQueue.offer(newState);
 							} else {
@@ -216,20 +201,10 @@ public class RandomHeuristic {
 						}
 					}
 				}
-				
-				if(this._sendingInterval-- == 0)
-				{
-					sendStatesForMerging();
-					System.out.println("Sent states for merging");
-					this._sendingInterval = Constants.CommunicationInterval;
-				}
-				
-				if(this._listeningInterval-- == 0)
-				{
-					hearMergeEvent();
-					this._listeningInterval = Constants.CommunicationIntervalForAnchor;
-				}
-//				System.out.println("Child Heuristic is executing, ID : "+_queueID);
+			}
+			if(nodePriorityQueue.isEmpty() == false || (currentMinKeyValue < initialBound)) {
+				sendStatesForMerging();
+				System.out.println("Sent states for merging");
 			}
 	}
 

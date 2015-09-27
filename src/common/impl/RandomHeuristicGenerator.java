@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import common.algorithms.GenericManhattanDistance;
 import common.algorithms.LinearConflict;
 import common.algorithms.ManhattanDistance;
+import common.constants.Constants;
 import common.model.StateP;
+import common.model.StatePInitialRandom;
 
 public class RandomHeuristicGenerator 
 {
@@ -21,6 +24,11 @@ public class RandomHeuristicGenerator
 				return (double) ManhattanDistance.calculate(state);
 			return randNums.get(0) * ManhattanDistance.calculate(state)
 					+ randNums.get(1) * LinearConflict.calculate(state);
+		}
+		
+		public static Double getHeuristicValue(StateP presentState, StatePInitialRandom dummyGoal) {
+			return (double) (GenericManhattanDistance.calculate(presentState , dummyGoal) 
+					 				+ Constants.NumberOfBackwardSteps);
 		}
 
 		

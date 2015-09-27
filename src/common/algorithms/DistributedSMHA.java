@@ -17,7 +17,7 @@ public class DistributedSMHA {
 		}
 		else 
 		{
-			new RandomHeuristic(me, 0.0, Constants.CommunicationInterval, Constants.CommunicationIntervalForAnchor);
+			new RandomHeuristic(me, 0.0);
 		}
 	}	
 }

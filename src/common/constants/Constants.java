@@ -2,12 +2,12 @@ package common.constants;
 
 public class Constants 
 {
-	public static final Double w1 = 5.0;
-	public static final Double w2 = 10.0;
+	public static final Double w1 = 1.1;
+	public static final Double w2 = 2.0;
 	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 3;
 	public static final Boolean debug = true;
-	public static final int CommunicationIntervalForAnchor = 400;
-	public static final int CommunicationInterval = 400;
+//	public static final int CommunicationIntervalForAnchor = 400;
+//	public static final int CommunicationInterval = 400;
 	public static final Double AStarWeight = 10.0;
 	public static final Integer DIMENSION = 7;
 	public static final Integer STARTOPERATION = 1;
@@ -18,4 +18,6 @@ public class Constants
 	public static final int DegreeOfRandomness = 5000;
 	public static final int SIZE = 6;
 	public static final int STOP = 7;
+	public static final Integer BOUND = 8;
+	public static final int NumberOfBackwardSteps = 100;
 }

@@ -53,16 +53,21 @@ public class HeuristicSolverUtility
 		System.out.println(" ");
 	}
 	
+	public static StateP createRandom(int dimension , Double weight) 
+	{
+		return createRandom(dimension, weight, Constants.DegreeOfRandomness);
+	}
+	
 	/**
 	 * @param dimension
 	 * @return generates random state of dimension * dimension
 	 */
-	public static StateP createRandom(int dimension , Double weight) 
+	public static StateP createRandom(int dimension , Double weight, Integer degreeOfRandomness) 
 	{
 		StateP s = new StateP(generateGoalState(dimension , weight).getAllCells() , weight);
 		Action old = null;
 		
-		for (int i = 0; i < Constants.DegreeOfRandomness; i++) 
+		for (int i = 0; i < degreeOfRandomness; i++) 
 		{
 			List<Action> actions = s.getPossibleActions();
 			// pick an action randomly
