@@ -18,8 +18,6 @@ import common.utility.HeuristicSolverUtility;
 
 public class RandomHeuristic {
 	
-	private int _sendingInterval;
-	private int _listeningInterval;
 	private int _queueID;
 	private StateP _randomState;
 	
@@ -33,10 +31,8 @@ public class RandomHeuristic {
 	
 	StateP goalState = HeuristicSolverUtility.generateGoalState(Constants.DIMENSION , Constants.w1);
 	
-	public RandomHeuristic(int queueID, Double bound, int sendingInterval, int listeningInterval)
+	public RandomHeuristic(int queueID)
 	{
-		this._sendingInterval = sendingInterval;
-		this._listeningInterval = listeningInterval;
 		this._queueID = queueID;
 		nodePriorityQueue = InadmissibleHeuristicQueue.createQueue();
 		statesExpandedInLastIterationQueue = InadmissibleHeuristicQueue.createQueue();
@@ -216,21 +212,12 @@ public class RandomHeuristic {
 						}
 					}
 				}
-				
-				if(this._sendingInterval-- == 0)
-				{
-					sendStatesForMerging();
-					System.out.println("Sent states for merging");
-					this._sendingInterval = Constants.CommunicationInterval;
-				}
-				
-				if(this._listeningInterval-- == 0)
-				{
-					hearMergeEvent();
-					this._listeningInterval = Constants.CommunicationIntervalForAnchor;
-				}
-//				System.out.println("Child Heuristic is executing, ID : "+_queueID);
 			}
+			// Apply bound check here
+//			if(bound has exceeded) {
+//				sendStatesForMerging();
+//				hearMergeEvent();
+//			}
 	}
 
 }

@@ -20,39 +20,38 @@ public class AnchorHeuristic
 {
 
 	PriorityQueue<StateP> anchorPriorityQueue = PQueue.createQueue();
+	HashMap<Integer, StateP> expandedNodesHashMap = new HashMap<Integer, StateP>();
+	
 	PriorityQueue<StateP> statesExpandedInLastIterationQueue = PQueue.createQueue();
 	HashMap<Integer, StateP> currentStatesInQueueHashMap = new HashMap<Integer, StateP>();
-	HashMap<Integer, StateP> expandedNodesHashMap = new HashMap<Integer, StateP>();
 
-	Integer _sendingInterval;
-	Integer _listeningInterval;
-
-	StateP goalState = HeuristicSolverUtility.generateGoalState(
-			Constants.DIMENSION, Constants.w1);
+	StateP goalState = HeuristicSolverUtility.generateGoalState(Constants.DIMENSION, Constants.w1);
 	int[] sizeArray = new int[1];
 	
+	Double _bound = 0.0;
+	private Integer intervalForAnchorToListen = Integer.MAX_VALUE;
 	Request reqH;
 
-	public AnchorHeuristic() {
-		this._listeningInterval = Constants.CommunicationInterval;
-		this._sendingInterval = Constants.CommunicationIntervalForAnchor;
-		StateP initialRandomState = HeuristicSolverUtility.createRandom(
-				Constants.DIMENSION, Constants.w1);
-
+	public AnchorHeuristic() 
+	{
+		StateP initialRandomState = HeuristicSolverUtility.createRandom(Constants.DIMENSION, Constants.w1);
 		initialRandomState.setPathCost(0);
-		initialRandomState.setHeuristicCost((double) LinearConflict.calculate(initialRandomState));
-
-		// Adding initial state to the list
-		anchorPriorityQueue.add(initialRandomState);
-		statesExpandedInLastIterationQueue.add(initialRandomState);
-		currentStatesInQueueHashMap.put(initialRandomState.hashCode(),
-				initialRandomState);
+		initialRandomState.setHeuristicCost(getHeuristicValue(initialRandomState));
 		
-		System.out.println("goal state is: "+goalState.hashCode());
+		addToAllDatastructures(initialRandomState);
 
 		startAllChildren(initialRandomState);
 		run();
-
+	}
+	
+	private Double getHeuristicValue(StateP state) {
+		return (double) LinearConflict.calculate(state);
+	}
+	
+	private void addToAllDatastructures(StateP state) {
+		anchorPriorityQueue.add(state);
+		statesExpandedInLastIterationQueue.add(state);
+		currentStatesInQueueHashMap.put(state.hashCode(), state);
 	}
 	
 	private void startAllChildren(StateP randomState) {
@@ -61,115 +60,104 @@ public class AnchorHeuristic
 		}
 	}
 
-	private static void startChild(StateP randomState, int queueID) {
+	private void startChild(StateP randomState, int queueID) {
 		StateP[] start = new StateP[1];
 		start[0] = randomState;
-		MPI.COMM_WORLD.Isend(start, 0, 1, MPI.OBJECT, queueID,
-				Constants.STARTOPERATION).Wait();
+		MPI.COMM_WORLD.Isend(start, 0, 1, MPI.OBJECT, queueID, Constants.STARTOPERATION).Wait();
+		
+		Double[] bound = new Double[1];
+		bound[0] = getBound();
+		MPI.COMM_WORLD.Isend(bound, 0, 1, MPI.OBJECT, queueID, Constants.BOUND).Wait();		
+	}
+	
+	private Double getBound() {
+		StateP topOfQueue = anchorPriorityQueue.peek();
+		if(topOfQueue == null) {
+			System.out.println("FATAL ERROR : Queue is empty");
+			return 0.0;
+		}
+		return Constants.w2 * topOfQueue.getKey();
 	}
 
 	public void run() 
 	{
 		System.out.println("Running Anchor Queue");
+		intervalForAnchorToListen = Constants.CommunicationIntervalForAnchorToListen;
+		
 		while (anchorPriorityQueue.isEmpty() == false) {
-//			HeuristicSolverUtility.printAllCostsInQueue(anchorPriorityQueue);
+			
 			StateP queueHead = anchorPriorityQueue.remove();
 			System.out.println("Removed Value in Anchor Queue "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
+			
 			currentStatesInQueueHashMap.remove(queueHead.hashCode());
-			if(statesExpandedInLastIterationQueue.contains(queueHead)) {
-				statesExpandedInLastIterationQueue.remove(queueHead);
-			}
+			
 			expandedNodesHashMap.put(queueHead.hashCode(), queueHead);
-			StateP queueHeadState = queueHead;
 
 			// If reached goal state
 			if (queueHead.equals(goalState)) {
-				System.out.println("Path length using A* is : "
-						+ HeuristicSolverUtility.printPathLength(queueHead));
+				
+				System.out.println("Path length using A* is : "+ HeuristicSolverUtility.printPathLength(queueHead));
 				break;
+				
 			} else {
-				List<Action> listOfPossibleActions = queueHeadState
-						.getPossibleActions();
+				List<Action> listOfPossibleActions = queueHead.getPossibleActions();
 				Iterator<Action> actIter = listOfPossibleActions.iterator();
+				
 				while (actIter.hasNext()) {
 					Action actionOnState = actIter.next();
-//					System.out.println("Actions being performed are "+actionOnState.getMove().toString());
-					StateP newState = actionOnState.applyTo(queueHeadState);
-					if (!expandedNodesHashMap.containsKey(newState.hashCode())) {
-						newState.setHeuristicCost((double) LinearConflict
-								.calculate(newState));
-						newState.setParent(queueHead);
-						
-						if(!currentStatesInQueueHashMap.containsKey(newState.hashCode())) {
-							anchorPriorityQueue.offer(newState);
-							statesExpandedInLastIterationQueue.offer(newState);
-							currentStatesInQueueHashMap.put(newState.hashCode(),
-									newState);
-						} else {
-							System.out.println("KEY MATCH");
-							StateP existingNode = currentStatesInQueueHashMap.get(newState.hashCode());
-							if(existingNode.getPathCost() < newState.getPathCost()) {
-								// Do nothing
-							} else {
-								anchorPriorityQueue.remove(existingNode);
-								existingNode.setPathCost(newState.getPathCost());
-								existingNode.setParent(newState.getParent());
-								anchorPriorityQueue.add(existingNode);
-							}
-						}
-					}
+					applyActionToState(actionOnState, queueHead);
+					
 				}
 			}
-			if(this._sendingInterval-- == 0)
-			{
-				for(int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
-				{
-					sendStatesForMerging(i);
-				}
-				statesExpandedInLastIterationQueue.clear();
-				this._sendingInterval = Constants.CommunicationIntervalForAnchor;
-			}
-			
-			if(this._listeningInterval-- == 0)
-			{
-				for(int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar ; i++)
-				{
+			if (intervalForAnchorToListen-- == 0) {
+				for (int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar; i++) {
 					System.out.println("Anchor Trying to listen");
 					hearMergeEvent(i);
 				}
-				this._listeningInterval = Constants.CommunicationInterval;
 			}
-			
-//			System.out.println("Anchor Heuristic is executing");
 		}
-		stopAllChildren();
-		MPI.Finalize();
 	}
-
-	private void stopAllChildren() 
-	{
-//		Boolean[] stop = new Boolean[1];
-//		stop[0] = true;
-//		MPI.COMM_WORLD.Bcast(stop, 0, 1, MPI.OBJECT, Constants.STOP);
+	
+	private void applyActionToState(Action action, StateP state) {
+		StateP newState = action.applyTo(state);
+		if (!expandedNodesHashMap.containsKey(newState.hashCode())) 
+		{
+			newState.setHeuristicCost(getHeuristicValue(newState));
+			newState.setParent(state);
+			
+			if(!currentStatesInQueueHashMap.containsKey(newState.hashCode())) {
+				addToAllDatastructures(newState);
+			} else {
+				System.out.println("KEY MATCH");
+				StateP existingNode = currentStatesInQueueHashMap.get(newState.hashCode());
+				if(existingNode.getPathCost() < newState.getPathCost()) {
+					// Do nothing
+				} else {
+					anchorPriorityQueue.remove(existingNode);
+					existingNode.setPathCost(newState.getPathCost());
+					existingNode.setParent(newState.getParent());
+					anchorPriorityQueue.add(existingNode);
+				}
+			}
+		}
+		else
+		{
+			// This state had already been expanded previously
+		}
 	}
 
 	private void hearMergeEvent(Integer queueID) 
 	{
-
-		if(reqH == null)
-		{
+		// TODO : Optimization could be to have Heuristic specific Request variable.
+		if(reqH == null) {
 			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, queueID,
 					Constants.SIZE);
 		}
 		
 		Status status = reqH.Test();
-		if(status == null)
-		{
-			System.out.println("STATUS is NULL");
+		if(status == null) {
 			return;
-		}
-		else
-		{
+		} else {
 			System.out.println("Incoming MESSAGE");
 			reqH.Wait();
 			reqH = null;
@@ -186,6 +174,7 @@ public class AnchorHeuristic
 
 			System.out.println("Anchor received states for merging");
 			merge(arrayOfStates);
+			sendStatesForMerging(queueID);
 			Arrays.fill(arrayOfStates, null);
 		}
 	}
@@ -194,47 +183,45 @@ public class AnchorHeuristic
 	{
 		StateP[] arrayOfStates = statesExpandedInLastIterationQueue.toArray(new StateP[0]);
 		
-		int[] sizeArray = new int[1];
 		sizeArray[0] = arrayOfStates.length;
 	
 		System.out.println("Sending states from Anchor of size "+arrayOfStates.length);
 		
-		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, queueID, Constants.SIZE);
+		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, queueID, Constants.SIZE).Wait();
+		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, queueID, Constants.MERGE).Wait();
 		
-		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, queueID, Constants.MERGE);
+		Double[] bound = new Double[1];
+		bound[0] = getBound();
+		MPI.COMM_WORLD.Isend(bound, 0, 1, MPI.DOUBLE, queueID, Constants.BOUND).Wait();
 		
 	}
 
 	private void merge(StateP[] listOfReceivedNodes) {
 		for (StateP node : listOfReceivedNodes) {
+			
 			if (node == null) {
+				// Something is not right in this case
 				break;
 			}
-			StateP existingNode = currentStatesInQueueHashMap.get(node
-					.hashCode());
-//			System.out.println("I am merging states");
+			
+			StateP existingNode = currentStatesInQueueHashMap.get(node.hashCode());
 			if (existingNode != null) {
 				if (existingNode.getPathCost() <= node.getPathCost()) {
 					// Nothing to do here
 				} else {
 					anchorPriorityQueue.remove(existingNode);
-//					System.out.println("Improving state from "+existingNode.getPathCost()+" to "+node.getPathCost());
 					existingNode.setPathCost(node.getPathCost());
 					existingNode.setParent(node.getParent());
 					anchorPriorityQueue.add(existingNode);
 				}
 			} else {
-//				System.out.println("Adding state");
-				node.setHeuristicCost((double) LinearConflict.calculate(node));
-				anchorPriorityQueue.add(node);
-				statesExpandedInLastIterationQueue.add(node);
-				currentStatesInQueueHashMap.put(node.hashCode(), node);
+				node.setHeuristicCost(getHeuristicValue(node));
+				addToAllDatastructures(node);
 			}
 			
 			StateP parentNode = node.getParent();
 			if(parentNode != null) {
 				if(currentStatesInQueueHashMap.containsKey(parentNode.hashCode())) {
-//					System.out.println("REMOVING PARENT");
 					anchorPriorityQueue.remove(parentNode);
 					statesExpandedInLastIterationQueue.remove(parentNode);
 					currentStatesInQueueHashMap.remove(parentNode.hashCode());
