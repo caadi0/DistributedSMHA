@@ -29,7 +29,7 @@ public class AnchorHeuristic
 	int[] sizeArray = new int[1];
 	
 	Double _bound = 0.0;
-	private Integer intervalForAnchorToListen = Integer.MAX_VALUE;
+//	private Integer intervalForAnchorToListen = Integer.MAX_VALUE;
 	Request reqH;
 
 	public AnchorHeuristic() 
@@ -82,7 +82,7 @@ public class AnchorHeuristic
 	public void run() 
 	{
 		System.out.println("Running Anchor Queue");
-		intervalForAnchorToListen = Constants.CommunicationIntervalForAnchorToListen;
+//		intervalForAnchorToListen = Constants.CommunicationIntervalForAnchorToListen;
 		
 		while (anchorPriorityQueue.isEmpty() == false) {
 			
@@ -109,12 +109,12 @@ public class AnchorHeuristic
 					
 				}
 			}
-			if (intervalForAnchorToListen-- == 0) {
+//			if (intervalForAnchorToListen-- == 0) {
 				for (int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar; i++) {
 					System.out.println("Anchor Trying to listen");
 					hearMergeEvent(i);
 				}
-			}
+//			}
 		}
 	}
 	

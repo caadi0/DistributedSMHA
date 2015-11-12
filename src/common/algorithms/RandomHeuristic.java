@@ -100,7 +100,11 @@ public class RandomHeuristic {
 		statesExpandedInLastIterationQueue.add(_randomState);
 		listOfNodesMap.put(_randomState.hashCode(), this._randomState);
 		
-		System.out.println("Start event heard on Queue ID : "+_queueID);
+		Double[] bound = new Double[1];
+		Request request2 = MPI.COMM_WORLD.Irecv(bound, 0, 1, MPI.OBJECT, 0, Constants.BOUND);
+		request2.Wait();
+		
+		System.out.println("Started Queue ID : "+_queueID);
 		run();
 	}
 
