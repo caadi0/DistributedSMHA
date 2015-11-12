@@ -4,6 +4,7 @@ import common.constants.Constants;
 
 public class StatePInitialRandom extends StateP {
 	
+	private static final long serialVersionUID = 1L;
 	private int[][] positionArray = new int[Constants.DIMENSION * Constants.DIMENSION][2];
 
 	public StatePInitialRandom(byte[] cells, Double weight) {

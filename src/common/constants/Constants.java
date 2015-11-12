@@ -11,6 +11,9 @@ public class Constants
 	public static final Double w2 = 10.0;
 	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 3;
 	public static final Integer DIMENSION = 7;
+	
+	// Degree of Randomness
+	public static final int DegreeOfRandomnessForRandomHeuristics = 60;
 	public static final int DegreeOfRandomness = 5000;
 	
 	// Communication Constants

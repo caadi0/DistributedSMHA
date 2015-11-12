@@ -11,6 +11,7 @@ import java.util.Random;
 import common.constants.Constants;
 import common.impl.Action;
 import common.model.StateP;
+import common.model.StatePInitialRandom;
 
 public class HeuristicSolverUtility 
 {
@@ -63,6 +64,40 @@ public class HeuristicSolverUtility
 		Action old = null;
 		
 		for (int i = 0; i < Constants.DegreeOfRandomness; i++) 
+		{
+			List<Action> actions = s.getPossibleActions();
+			// pick an action randomly
+			Random random = new Random();
+			int index = random.nextInt(actions.size());
+			Action a = actions.get(index);
+			if (old != null && old.isInverse(a))
+			{
+				if (index == 0)
+				{
+					index = 1;
+				}
+				else
+				{
+					index--;
+				}
+				a = actions.get(index);
+			}
+			s = a.applyTo(s);
+			old = a;
+		}
+		return s;
+	}
+	
+	/**
+	 * @param dimension
+	 * @return generates random state of dimension * dimension
+	 */
+	public static StatePInitialRandom createRandom(int dimension , Double weight, Integer degreeOfRandomness) 
+	{
+		StatePInitialRandom s = new StatePInitialRandom(generateGoalState(dimension , weight).getAllCells() , weight);
+		Action old = null;
+		
+		for (int i = 0; i < degreeOfRandomness; i++) 
 		{
 			List<Action> actions = s.getPossibleActions();
 			// pick an action randomly

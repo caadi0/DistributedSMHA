@@ -4,7 +4,7 @@ import common.model.StatePInitialRandom;
 
 public class GenericManhattanDistance {
 	
-	public static int calculate(StateP s, StatePInitialRandom goalState) 
+	public static Double calculate(StateP s, StatePInitialRandom goalState) 
 	{
 		int counter = 0;
 		byte[] allCells = s.getAllCells();
@@ -28,6 +28,6 @@ public class GenericManhattanDistance {
 			counter += difference;
 
 		}
-		return counter;
+		return (double) counter;
 	}
 }

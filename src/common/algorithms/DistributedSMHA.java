@@ -4,7 +4,6 @@ import mpi.MPI;
 
 public class DistributedSMHA {
 
-	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		MPI.Init(args);
 		int me = MPI.COMM_WORLD.Rank();

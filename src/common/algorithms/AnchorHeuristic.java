@@ -19,33 +19,42 @@ import mpi.Status;
 public class AnchorHeuristic 
 {
 
-	PriorityQueue<StateP> anchorPriorityQueue = PQueue.createQueue();
-	HashMap<Integer, StateP> expandedNodesHashMap = new HashMap<Integer, StateP>();
+	PriorityQueue<StateP> anchorPriorityQueue;
+	HashMap<Integer, StateP> expandedNodesHashMap;
 	
-	PriorityQueue<StateP> statesExpandedInLastIterationQueue = PQueue.createQueue();
-	HashMap<Integer, StateP> currentStatesInQueueHashMap = new HashMap<Integer, StateP>();
+	PriorityQueue<StateP> statesExpandedInLastIterationQueue;
+	HashMap<Integer, StateP> currentStatesInQueueHashMap;
 
 	StateP goalState = HeuristicSolverUtility.generateGoalState(Constants.DIMENSION, Constants.w1);
 	int[] sizeArray = new int[1];
 	
-	Double _bound = 0.0;
-//	private Integer intervalForAnchorToListen = Integer.MAX_VALUE;
 	Request reqH;
 
 	public AnchorHeuristic() 
 	{
+		// Initial data structure initialization
+		anchorPriorityQueue = PQueue.createQueue();
+		statesExpandedInLastIterationQueue = PQueue.createQueue();
+		// A state's Hash code is the Key
+		currentStatesInQueueHashMap = new HashMap<Integer, StateP>();
+		expandedNodesHashMap = new HashMap<Integer, StateP>();
+		
 		StateP initialRandomState = HeuristicSolverUtility.createRandom(Constants.DIMENSION, Constants.w1);
 		initialRandomState.setPathCost(0);
 		initialRandomState.setHeuristicCost(getHeuristicValue(initialRandomState));
 		
+		// Since we got a new state, we need to add it to all the relevant DS.
 		addToAllDatastructures(initialRandomState);
 
+		// Send starting state and bound to all the Children (Random Heuristic) Queues
 		startAllChildren(initialRandomState);
+		
+		// Anchor starts executing using its own Algorithm
 		run();
 	}
 	
-	private Double getHeuristicValue(StateP state) {
-		return (double) LinearConflict.calculate(state);
+	private static Double getHeuristicValue(StateP state) {
+		return (double) ManhattanDistance.calculate(state);
 	}
 	
 	private void addToAllDatastructures(StateP state) {
@@ -55,6 +64,7 @@ public class AnchorHeuristic
 	}
 	
 	private void startAllChildren(StateP randomState) {
+		// Start all the random Heuristics one by one.
 		for (int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar; i++) {
 			startChild(randomState , i);
 		}
