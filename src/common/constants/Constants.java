@@ -7,10 +7,10 @@ public class Constants
 	public static final Boolean debug = true;
 	public static final int CommunicationIntervalForAnchorToListen = 100;
 	
-	public static final Double w1 = 5.0;
-	public static final Double w2 = 10.0;
+	public static final Double w1 = 5.10;
+	public static final Double w2 = 1.90;
 	public static final int NumberOfInadmissibleHeuristicsForSMHAStar = 3;
-	public static final Integer DIMENSION = 7;
+	public static final Integer DIMENSION = 5;
 	
 	// Degree of Randomness
 	public static final int DegreeOfRandomnessForRandomHeuristics = 60;

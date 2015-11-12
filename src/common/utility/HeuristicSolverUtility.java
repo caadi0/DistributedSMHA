@@ -146,6 +146,7 @@ public class HeuristicSolverUtility
 	public static void printHashMap(HashMap<Integer, StateP> mapH)
 	{
 		Map<Integer, StateP> map = mapH;
+		@SuppressWarnings({ "rawtypes", "unchecked" })
 		List<Integer> keys = new ArrayList(map.keySet());
 		for (Integer key: keys) {
 		    System.out.println(key + ": " + map.get(key));

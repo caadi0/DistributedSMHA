@@ -92,7 +92,6 @@ public class AnchorHeuristic
 	public void run() 
 	{
 		System.out.println("Running Anchor Queue");
-//		intervalForAnchorToListen = Constants.CommunicationIntervalForAnchorToListen;
 		
 		while (anchorPriorityQueue.isEmpty() == false) {
 			
@@ -100,7 +99,6 @@ public class AnchorHeuristic
 			System.out.println("Removed Value in Anchor Queue "+ queueHead.getPathCost() + " : "+queueHead.getHeuristicCost() + " ; ");
 			
 			currentStatesInQueueHashMap.remove(queueHead.hashCode());
-			
 			expandedNodesHashMap.put(queueHead.hashCode(), queueHead);
 
 			// If reached goal state
@@ -116,15 +114,12 @@ public class AnchorHeuristic
 				while (actIter.hasNext()) {
 					Action actionOnState = actIter.next();
 					applyActionToState(actionOnState, queueHead);
-					
 				}
 			}
-//			if (intervalForAnchorToListen-- == 0) {
 				for (int i = 1; i <= Constants.NumberOfInadmissibleHeuristicsForSMHAStar; i++) {
 					System.out.println("Anchor Trying to listen");
-					hearMergeEvent(i);
+					hearBoundExceededEvent(i);
 				}
-//			}
 		}
 	}
 	
@@ -156,9 +151,8 @@ public class AnchorHeuristic
 		}
 	}
 
-	private void hearMergeEvent(Integer queueID) 
+	private void hearBoundExceededEvent(Integer queueID) 
 	{
-		// TODO : Optimization could be to have Heuristic specific Request variable.
 		if(reqH == null) {
 			reqH = MPI.COMM_WORLD.Irecv(sizeArray, 0, 1, MPI.INT, queueID,
 					Constants.SIZE);
@@ -175,7 +169,7 @@ public class AnchorHeuristic
 			
 		Integer size = sizeArray[0];
 
-		System.out.println("Size received by anchor "+size);
+		System.out.println("Size received by anchor "+size +" from  Queue : "+queueID);
 		if(size != null && size > 0)
 		{
 			StateP[] arrayOfStates = new StateP[size];
@@ -183,22 +177,22 @@ public class AnchorHeuristic
 					queueID, Constants.MERGE).Wait();
 
 			System.out.println("Anchor received states for merging");
-			merge(arrayOfStates);
 			sendStatesForMerging(queueID);
+			merge(arrayOfStates);
 			Arrays.fill(arrayOfStates, null);
 		}
 	}
 	
 	private void sendStatesForMerging(Integer queueID)
 	{
-		StateP[] arrayOfStates = statesExpandedInLastIterationQueue.toArray(new StateP[0]);
-		
-		sizeArray[0] = arrayOfStates.length;
-	
-		System.out.println("Sending states from Anchor of size "+arrayOfStates.length);
-		
-		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, queueID, Constants.SIZE).Wait();
-		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, queueID, Constants.MERGE).Wait();
+//		StateP[] arrayOfStates = statesExpandedInLastIterationQueue.toArray(new StateP[0]);
+//		
+//		sizeArray[0] = arrayOfStates.length;
+//	
+//		System.out.println("Sending states from Anchor of size "+arrayOfStates.length);
+//		
+//		MPI.COMM_WORLD.Isend(sizeArray, 0, 1, MPI.INT, queueID, Constants.SIZE).Wait();
+//		MPI.COMM_WORLD.Isend(arrayOfStates, 0, arrayOfStates.length, MPI.OBJECT, queueID, Constants.MERGE).Wait();
 		
 		Double[] bound = new Double[1];
 		bound[0] = getBound();

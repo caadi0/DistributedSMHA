@@ -5,12 +5,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import sun.font.CreatedFontTracker;
 import mpi.MPI;
 import common.constants.Constants;
 import common.impl.Action;
 import common.impl.InadmissibleHeuristicQueue;
-import common.impl.RandomHeuristicGenerator;
 import common.model.StateP;
 import common.model.StatePInitialRandom;
 import common.utility.HeuristicSolverUtility;
@@ -21,7 +19,6 @@ public class RandomHeuristic {
 	private StateP _initialRandomState;
 	private StatePInitialRandom _randomGoalState;
 	private Double _bound;
-	int[] sizeArray = new int[1];
 
 	PriorityQueue<StateP> nodePriorityQueue;
 	PriorityQueue<StateP> statesExpandedInLastIterationQueue;
@@ -119,7 +116,8 @@ public class RandomHeuristic {
 
 			System.out.println("Removed Value in Random Queue " + _queueID
 					+ " " + queueHead.getPathCost() + " : "
-					+ queueHead.getHeuristicCost() + " ; ");
+					+ queueHead.getHeuristicCost() + " ; "
+					+ queueHead.getKey());
 			currentStatesInQueueHashMap.remove(queueHead.hashCode());
 
 			if (statesExpandedInLastIterationQueue.contains(queueHead)) {
@@ -150,15 +148,14 @@ public class RandomHeuristic {
 
 						if (!currentStatesInQueueHashMap.containsKey(newState
 								.hashCode())) {
-							nodePriorityQueue.offer(newState);
 
 							System.out.println("Added Value in Random Queue "
 									+ _queueID + "  " + newState.getPathCost()
 									+ " : " + newState.getHeuristicCost()
 									+ " ; ");
-							currentStatesInQueueHashMap.put(
-									newState.hashCode(), newState);
-							statesExpandedInLastIterationQueue.offer(newState);
+							
+							addToAllDatastructures(newState);
+	
 						} else {
 							StateP existingNode = currentStatesInQueueHashMap
 									.get(newState.hashCode());
